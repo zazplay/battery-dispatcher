@@ -81,7 +81,9 @@ h1.ai-line b { color: var(--blue); font-weight: 800; }
 .hud-label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .hud-money { font-size: 36px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--ink); }
 .hud-rate { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.hud-line { font-size: 12.5px; line-height: 1.35; font-weight: 600; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--line); min-height: calc(8px + 2 * 1.35 * 12.5px); text-wrap: pretty; } /* room for two lines, so the height holds too */
+/* exactly two lines tall whatever the text — the card never changes size while the day plays */
+.hud-line { font-size: 12.5px; line-height: 1.35; font-weight: 600; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--line); height: calc(8px + 2 * 1.35 * 12.5px); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.hud-rate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* callout labels: a thin line rises from the object, the text hangs beside the top of the line */
 .lbl { position: absolute; left: 0; top: 0; will-change: transform; }
 .lbl::after { content: ""; position: absolute; left: -3px; bottom: -3px; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); box-shadow: 0 0 0 2px #fff; }

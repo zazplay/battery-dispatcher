@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>AI Battery Energy Site</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #faf9f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    #__bundler_loading { position: fixed; bottom: 20px; right: 20px; font: 13px/1.4 -apple-system, BlinkMacSystemFont, sans-serif; color: #666; background: #fff; padding: 8px 14px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.12); z-index: 10000; }
+    #__bundler_thumbnail { position: fixed; inset: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #faf9f5; z-index: 9999; }
+    #__bundler_thumbnail svg { width: 100%; height: 100%; object-fit: contain; }
+    #__bundler_placeholder { color: #999; font-size: 14px; }
+  </style>
+  <noscript>
+    <style>#__bundler_loading { display: none; }</style>
+    <div style="position:fixed;bottom:12px;left:12px;font:13px/1.4 -apple-system,BlinkMacSystemFont,sans-serif;color:#999;background:rgba(255,255,255,0.9);padding:6px 12px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.08);z-index:10000;">
+      This page requires JavaScript to display.
+    </div>
+  </noscript>
+</head>
+<body>
+  <div id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#cfe3f7"></rect><rect x="30" y="38" width="40" height="28" rx="3" fill="#16a34a"></rect><rect x="70" y="46" width="5" height="12" fill="#16a34a"></rect></svg></div>
+  <div id="__bundler_loading">Unpacking...</div>
+
+  <script>
+    
+document.addEventListener('DOMContentLoaded', async function() {
+  const loading = document.getElementById('__bundler_loading');
+  function setStatus(msg) { if (loading) loading.textContent = msg; }
+
+  const FONT_MIME = /^(font[/]|application[/](x-)?font-|application[/]vnd\.ms-fontobject)/i;
+  const MIME_TOKEN = /^[\w.+-]+[/][\w.+-]+$/;
+  function toBase64(bytes) {
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(bin);
+  }
+
+  // Error sink persists across replaceWith since it's on window, not the DOM.
+  window.addEventListener('error', function(e) {
+    // Failed resource loads (CSP-blocked links, scripts, images) fire plain
+    // events at the element — warn only; real JS errors carry message/error.
+    if (!e.message && !e.error && e.target && e.target !== window) {
+      console.warn('[bundle] resource failed to load:',
+        e.target.tagName, String(e.target.src || e.target.href || ''));
+      return;
+    }
+    var p = document.body || document.documentElement;
+    var d = document.getElementById('__bundler_err') || p.appendChild(document.createElement('div'));
+    d.id = '__bundler_err';
+    d.style.cssText = 'position:fixed;bottom:12px;left:12px;right:12px;font:12px/1.4 ui-monospace,monospace;background:#2a1215;color:#ff8a80;padding:10px 14px;border-radius:8px;border:1px solid #5c2b2e;z-index:99999;white-space:pre-wrap;max-height:40vh;overflow:auto';
+    d.textContent = (d.textContent ? d.textContent + String.fromCharCode(10) : '') +
+      '[bundle] ' + (e.message || e.type) +
+      (e.filename ? ' (' + e.filename.slice(0, 60) + ':' + e.lineno + ')' : '');
+  }, true);
+
+  try {
+    const manifestEl = document.querySelector('script[type="__bundler/manifest"]');
+    const templateEl = document.querySelector('script[type="__bundler/template"]');
+    if (!manifestEl || !templateEl) {
+      setStatus('Error: missing bundle data');
+      console.error('[bundler] Missing script tags — manifestEl:', !!manifestEl, 'templateEl:', !!templateEl);
+      return;
+    }
+
+    const manifest = JSON.parse(manifestEl.textContent);
+    let template = JSON.parse(templateEl.textContent);
+
+    // Nested page bundles (iframe targets). Each ships ONCE, in the ROOT
+    // document's manifest; frame srcs carry an about:blank#<uuid> marker
+    // instead of a substitutable uuid. Every document mints the blobs for
+    // its OWN frames — from local text at the root, or text obtained from
+    // its DIRECT parent over the relay protocol below — so each frame
+    // navigation stays same-origin with its initiator and a deduped page
+    // loads at any depth on any host, including a file:// download's
+    // opaque origins (where a blob minted by one document cannot be
+    // navigated to by another).
+    const pageOrderEl = document.querySelector('script[type="__bundler/page_order"]');
+    const pageOrder = pageOrderEl ? JSON.parse(pageOrderEl.textContent) : [];
+    const pageSet = new Set(pageOrder);
+    const pageTexts = {};
+
+    // ── Nested-page text protocol (parent-chain relay) ──
+    // Page bundles ship once, in the ROOT document's manifest. Every
+    // document mints the blobs for its OWN frames, obtaining page text
+    // through a strict parent-chain relay: a document only ever SENDS to
+    // its direct parent (which, for every document the publisher's own
+    // runtime minted, is another publisher document) and only ACCEPTS
+    // text from that direct parent; requests from below are honored only
+    // for the document's own child frames, and the ROOT never sends
+    // upward at all. That last rule is load-bearing: the artifact host's
+    // frame-ancestors allows claude.ai (and friends) to frame an
+    // artifact, so window.top can be a FOREIGN document — a top-addressed
+    // protocol would hand page uuids to that ancestor and accept forged
+    // "page text" from it, minting attacker HTML as an artifact-origin
+    // blob document. The chain never touches the ancestor: requests stop
+    // at the root, replies are origin-addressed per hop (never '*' when
+    // an origin exists), and both directions are origin-gated (on https
+    // a foreign sender's origin can never equal this document's; in
+    // opaque contexts — file:// — everything serializes as 'null', where
+    // an embedded EXTERNAL frame still fails the gate by carrying its
+    // own real origin, and a sandboxed child of such a frame is excluded
+    // by the own-child-frames check plus uuid unguessability). Shape is
+    // deny-by-default: one request form, one reply form, no error
+    // replies.
+    // window.origin is the SERIALIZED SECURITY origin ('null' in opaque
+    // contexts such as a sandboxed preview iframe) — location.origin is
+    // computed from the URL and stays 'https://…' even when the document
+    // is sandboxed, which would misgate every opaque chain.
+    const OWN_TARGET = /^https?:[/][/]/.test(window.origin || '')
+      ? window.origin
+      : '*';
+    function trustedOrigin(e) {
+      if (e.origin === window.origin) return true; // https chains; opaque==opaque
+      // file:// trees: Chrome serializes the file document's origin as
+      // 'file://' while the blob: documents it mints serialize as 'null',
+      // so the two legitimate shapes can never string-match — accept the
+      // pair in both directions. https origins never serialize as either,
+      // and sender identity (own child frame / direct parent) is checked
+      // separately.
+      return (
+        (e.origin === 'null' &&
+          (window.origin === 'file://' ||
+            window.location.protocol === 'file:')) ||
+        (/^file:/.test(e.origin) && window.origin === 'null')
+      );
+    }
+    // Non-empty only in the root document (nested bundles ship an empty
+    // island), so it doubles as the root marker: the root answers from
+    // local text and treats a miss as authoritative — never relaying to
+    // its (possibly foreign) parent.
+    const isPageRoot = pageOrder.length > 0;
+    const blobUrls = {};
+    const resourceBlobs = {};
+    const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+    const pendingFrames = {}; // uuid -> [{el, frag}] awaiting text for own frames
+    const pendingRelays = {}; // uuid -> [childWindow] awaiting text to pass down
+    function mountPage(el, frag, text) {
+      const pageBlob = new Blob([text], { type: 'text/html' });
+      const u = URL.createObjectURL(pageBlob);
+      resourceBlobs[u] = pageBlob;
+      el.src = u + frag;
+    }
+    function deliverPage(uuid, text) {
+      const frames = pendingFrames[uuid];
+      delete pendingFrames[uuid];
+      if (frames) for (const f of frames) mountPage(f.el, f.frag, text);
+      const relays = pendingRelays[uuid];
+      delete pendingRelays[uuid];
+      if (relays) {
+        for (const cw of relays) {
+          try { cw.postMessage({ __bundler_page: uuid, __bundler_text: text }, OWN_TARGET); } catch (err) { /* gone */ }
+        }
+      }
+    }
+    function ownFrameWindows() {
+      const out = [];
+      for (const f of Array.from(document.querySelectorAll('iframe'))) {
+        try { if (f.contentWindow) out.push(f.contentWindow); } catch (err) { /* detached */ }
+      }
+      return out;
+    }
+    window.addEventListener('message', function (e) {
+      const d = e.data;
+      if (!d || typeof d !== 'object' || !e.source) return;
+      // Origin gate first; the structural checks below (own-child-frames
+      // for requests, direct-parent + solicited-uuid for replies, the
+      // root's never-relay rule) are what hold in fully opaque chains
+      // where origin strings can't discriminate — a sandboxed root's
+      // FOREIGN wrapper still fails all three even though both serialize
+      // as real-vs-'null' rather than matching.
+      if (!trustedOrigin(e)) return;
+      if (typeof d.__bundler_need === 'string' && UUID_SHAPE.test(d.__bundler_need)) {
+        // Requests are honored only for this document's own child frames.
+        if (ownFrameWindows().indexOf(e.source) < 0) return;
+        const uuid = d.__bundler_need;
+        const text = pageTexts[uuid];
+        if (typeof text === 'string') {
+          try { e.source.postMessage({ __bundler_page: uuid, __bundler_text: text }, OWN_TARGET); } catch (err) { /* gone */ }
+          return;
+        }
+        if (isPageRoot || window.parent === window) return; // authoritative miss
+        const waiting = pendingRelays[uuid];
+        if (waiting) {
+          if (waiting.indexOf(e.source) < 0) waiting.push(e.source);
+          return;
+        }
+        // Never-answered uuids would otherwise accumulate forever under a
+        // request spray; past the cap (far above any real page count) new
+        // relays are dropped rather than remembered.
+        if (Object.keys(pendingRelays).length >= 128) return;
+        pendingRelays[uuid] = [e.source];
+        window.parent.postMessage({ __bundler_need: uuid }, OWN_TARGET);
+      } else if (
+        typeof d.__bundler_page === 'string' &&
+        UUID_SHAPE.test(d.__bundler_page) &&
+        typeof d.__bundler_text === 'string'
+      ) {
+        // The shape test is load-bearing beyond tidiness: the solicited
+        // check below uses the in operator, which matches prototype keys
+        // ('__proto__', 'constructor') — an unshaped key would reach
+        // deliverPage and throw, painting the error banner.
+        // Text is accepted only from the direct parent — the document
+        // that minted this one.
+        if (e.source !== window.parent || window.parent === window) return;
+        if (!(d.__bundler_page in pendingFrames) && !(d.__bundler_page in pendingRelays)) return;
+        deliverPage(d.__bundler_page, d.__bundler_text);
+      }
+    });
+
+    const uuids = Object.keys(manifest);
+    setStatus('Unpacking ' + uuids.length + ' assets...');
+
+    await Promise.all(uuids.map(async (uuid) => {
+      const entry = manifest[uuid];
+      try {
+        const binaryStr = atob(entry.data);
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+
+        let finalBytes = bytes;
+        if (entry.compressed) {
+          if (typeof DecompressionStream !== 'undefined') {
+            const ds = new DecompressionStream('gzip');
+            const writer = ds.writable.getWriter();
+            const reader = ds.readable.getReader();
+            writer.write(bytes);
+            writer.close();
+            const chunks = [];
+            let totalLen = 0;
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              chunks.push(value);
+              totalLen += value.length;
+            }
+            finalBytes = new Uint8Array(totalLen);
+            let offset = 0;
+            for (const chunk of chunks) { finalBytes.set(chunk, offset); offset += chunk.length; }
+          } else {
+            console.warn('DecompressionStream not available, asset ' + uuid + ' may not render');
+          }
+        }
+
+        if (pageSet.has(uuid)) {
+          pageTexts[uuid] = new TextDecoder().decode(finalBytes);
+          return;
+        }
+        if (FONT_MIME.test(entry.mime) && MIME_TOKEN.test(entry.mime)) {
+          // Strict artifact hosts allow font-src data: but not blob:.
+          blobUrls[uuid] = 'data:' + entry.mime + ';base64,' +
+            (entry.compressed ? toBase64(finalBytes) : entry.data);
+        } else {
+          const blob = new Blob([finalBytes], { type: entry.mime });
+          blobUrls[uuid] = URL.createObjectURL(blob);
+          resourceBlobs[blobUrls[uuid]] = blob;
+        }
+      } catch (err) {
+        console.error('Failed to decode asset ' + uuid + ':', err);
+        const blob = new Blob([], { type: entry.mime });
+        blobUrls[uuid] = URL.createObjectURL(blob);
+        resourceBlobs[blobUrls[uuid]] = blob;
+      }
+    }));
+
+    const extResEl = document.querySelector('script[type="__bundler/ext_resources"]');
+    const extResources = extResEl ? JSON.parse(extResEl.textContent) : [];
+    const resourceMap = {};
+    for (const entry of extResources) {
+      if (blobUrls[entry.uuid]) resourceMap[entry.id] = blobUrls[entry.uuid];
+    }
+
+    // Artifact-host CSP (connect-src 'self') refuses fetch() of blob: URLs —
+    // consumers read these Blobs directly. Survives the swap like the error sink.
+    window.__resourceBlobs = resourceBlobs;
+
+    setStatus('Rendering...');
+    // Page uuids have no blob here — they ride inside about:blank#<uuid>
+    // frame markers the pass below resolves after the swap.
+    for (const uuid of uuids) {
+      if (pageSet.has(uuid)) continue;
+      template = template.split(uuid).join(blobUrls[uuid]);
+    }
+
+    // Strip integrity + crossorigin — blob URLs from a file:// document inherit
+    // a null origin, so crossorigin forces a CORS fetch that SRI then rejects.
+    // The manifest bytes are ours; SRI protects against CDN compromise, not this.
+    template = template.replace(/\s+integrity="[^"]*"/gi, '').replace(/\s+crossorigin="[^"]*"/gi, '');
+
+    const resourceScript = '<script>window.__resources = ' +
+      JSON.stringify(resourceMap).replace(/<\//g, '<\\/') +
+      ';</' + 'script>';
+    // Inject after <head> so the DOCTYPE stays first; prepending the script
+    // would push the parser into quirks mode. DOMParser always emits a <head>
+    // (synthesizing one if the source HTML omitted it) but may carry
+    // attributes through, so match the full opening tag. slice() rather than
+    // replace() keeps us clear of $-pattern substitution in resourceScript.
+    const headOpen = template.match(/<head[^>]*>/i);
+    if (headOpen) {
+      const i = headOpen.index + headOpen[0].length;
+      template = template.slice(0, i) + resourceScript + template.slice(i);
+    }
+
+    // Parse the template and swap the root element. Scripts inserted via
+    // DOMParser/replaceWith are inert per spec — re-create each with
+    // createElement so they execute, awaiting onload for src scripts to
+    // preserve ordering (React before ReactDOM before Babel before text/babel).
+    const doc = new DOMParser().parseFromString(template, 'text/html');
+    document.documentElement.replaceWith(doc.documentElement);
+
+    // Resolve page-frame markers: mint this document's own blob for each
+    // framed page — from local text when this is the root, otherwise by
+    // asking the direct parent over the relay protocol above. An
+    // unanswered request leaves the frame on about:blank, the same
+    // degraded state as a refused embed.
+    {
+      const MARKER = /^about:blank#([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(#.*)?$/;
+      const needed = [];
+      for (const el of Array.from(document.querySelectorAll('iframe'))) {
+        const m = MARKER.exec(el.getAttribute('src') || '');
+        if (!m) continue;
+        const text = pageTexts[m[1]];
+        if (typeof text === 'string') {
+          mountPage(el, m[2] || '', text);
+        } else if (window.parent !== window && !isPageRoot) {
+          const had = pendingFrames[m[1]];
+          (pendingFrames[m[1]] = had || []).push({ el: el, frag: m[2] || '' });
+          if (!had) needed.push(m[1]);
+        }
+      }
+      for (const uuid of needed) {
+        window.parent.postMessage({ __bundler_need: uuid }, OWN_TARGET);
+      }
+    }
+
+    const dead = Array.from(document.scripts);
+    for (const old of dead) {
+      const s = document.createElement('script');
+      for (const a of old.attributes) s.setAttribute(a.name, a.value);
+      s.textContent = old.textContent;
+      // text/babel scripts with a src: read and inline. transformScriptTags
+      // does XHR against the src, but blob:null/ from a file:// origin is
+      // silently dropped. Inlining makes it a plain inline babel script,
+      // which transformScriptTags handles unconditionally.
+      if ((s.type === 'text/babel' || s.type === 'text/jsx') && s.src) {
+        const pre = resourceBlobs[s.src.split('#')[0]];
+        s.textContent = pre ? await pre.text() : await (await fetch(s.src)).text();
+        s.removeAttribute('src');
+      }
+      const p = s.src ? new Promise(function(r) { s.onload = s.onerror = r; }) : null;
+      old.replaceWith(s);
+      if (p) await p;
+    }
+    // Babel standalone auto-transforms type=text/babel on DOMContentLoaded,
+    // which fired before we swapped the document. Trigger manually if present.
+    if (window.Babel && typeof window.Babel.transformScriptTags === 'function') {
+      window.Babel.transformScriptTags();
+    }
+  } catch (err) {
+    setStatus('Error unpacking: ' + err.message);
+    console.error('Bundle unpack error:', err);
+  }
+});
+
+  </script>
+
+  <script type="__bundler/manifest">
+{"e27be9d9-1bfb-43b6-bb15-e8db2aa6a892":{"mime":"text/javascript","compressed":true,"data":"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"}}
+  </script>
+
+  <script type="__bundler/ext_resources">
+[]
+  </script>
+
+  <script type="__bundler/page_order">
+[]
+  </script>
+
+  <script type="__bundler/template">
+"<!DOCTYPE html>\n<html lang=\"en\"><head>\n<meta charset=\"utf-8\">\n<title>AI Battery Energy Site<\u002Ftitle>\n<script type=\"importmap\">\n{\n  \"imports\": {\n    \"three\": \"https://unpkg.com/three@0.184.0/build/three.module.js\",\n    \"three/addons/controls/OrbitControls.js\": \"https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js\",\n    \"three/addons/exporters/OBJExporter.js\": \"https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js\",\n    \"three/addons/exporters/GLTFExporter.js\": \"https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js\"\n  },\n  \"integrity\": {\n    \"https://unpkg.com/three@0.184.0/build/three.module.js\": \"sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J\",\n    \"https://unpkg.com/three@0.184.0/build/three.core.js\": \"sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT\",\n    \"https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js\": \"sha384-4rziNxOBZKQ69i+w+f89KJ55TCYquwchVbByQwmaOeIOXdOU2PLDn3kOfXHwIJC9\",\n    \"https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js\": \"sha384-nbwtoZENJD3Vq+ACK0CuGQdPMuDWHkamC2KJD70EV5nfg6jQjfppKOea07YJN+N3\",\n    \"https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js\": \"sha384-VofkvpG6HERhFCYbsUOHeNXBCqID2nfqkQqnVzE1jc/oPcz+qJ13ADdXH08hE+cQ\"\n  }\n}\n<\u002Fscript>\n<style>\n  html,body{margin:0;height:100%;background:#fff}\n  three-d-stage:not(:defined){visibility:hidden}\n  #labels{position:fixed;inset:0;z-index:2;pointer-events:none;font-family:-apple-system,\"SF Pro Display\",\"Helvetica Neue\",Helvetica,sans-serif}\n  .lbl{position:absolute;left:0;top:0;will-change:transform}\n  .lbl .line{position:absolute;left:0;bottom:0;width:1px;background:#8b8f96}\n  .lbl .txt{position:absolute;left:14px;white-space:nowrap;transform:translateY(-100%)}\n  .lbl .val{font-size:30px;font-weight:600;color:#1b1d21;letter-spacing:-0.5px}\n  .lbl .val small{font-size:20px;font-weight:400;color:#8b8f96;margin-left:4px}\n  .lbl .ttl{font-size:20px;color:#8b8f96;margin-top:2px}\n<\u002Fstyle>\n<\u002Fhead>\n<body>\n\n<three-d-stage name=\"energy-site\" background=\"linear-gradient(180deg, #cfe3f7 0%, #e9f2fb 45%, #ffffff 100%)\"><\u002Fthree-d-stage>\n<div id=\"labels\"><\u002Fdiv>\n<div id=\"ai-panel\" style=\"position:fixed;left:16px;bottom:52px;width:300px;box-sizing:border-box;padding:14px 14px 10px;z-index:1;background:rgba(255,255,255,0.86);backdrop-filter:blur(12px);border:1px solid rgba(20,30,50,0.08);border-radius:16px;font-family:-apple-system,'SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#1b1d21;box-shadow:0 8px 30px rgba(30,50,90,0.08)\">\n  <div style=\"display:flex;align-items:center;justify-content:space-between;gap:12px\">\n    <div style=\"font-size:15px;font-weight:600;min-width:0\">AI battery dispatcher<\u002Fdiv>\n    <div id=\"ai-clock\" style=\"font-size:15px;font-variant-numeric:tabular-nums;color:#8b8f96\">00:00<\u002Fdiv>\n  <\u002Fdiv>\n  <div style=\"display:flex;align-items:center;gap:10px;margin-top:12px\">\n    <div id=\"ai-mode\" style=\"padding:4px 10px;border-radius:999px;color:#fff;font-size:13px;font-weight:600;background:#8b8f96\">Waiting<\u002Fdiv>\n    <div id=\"ai-price\" style=\"white-space:nowrap;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums\">—<\u002Fdiv>\n  <\u002Fdiv>\n  <div id=\"ai-why\" style=\"font-size:13px;color:#6b7078;margin-top:8px;min-height:18px;text-wrap:pretty\">—<\u002Fdiv>\n  <svg id=\"ai-chart\" viewBox=\"0 0 320 110\" style=\"width:100%;height:80px;margin-top:10px;display:block\">\n    <g class=\"zones\"><\u002Fg>\n    <path class=\"curve\" fill=\"none\" stroke=\"#1b1d21\" stroke-width=\"1.6\"><\u002Fpath>\n    <line class=\"cursor\" y1=\"10\" y2=\"96\" stroke=\"#c4c8ce\" stroke-width=\"1\"><\u002Fline>\n    <circle class=\"dot\" r=\"4.5\" fill=\"#8b8f96\"><\u002Fcircle>\n    <text x=\"8\" y=\"108\" font-size=\"10\" fill=\"#8b8f96\">00<\u002Ftext><text x=\"160\" y=\"108\" font-size=\"10\" fill=\"#8b8f96\" text-anchor=\"middle\">12<\u002Ftext><text x=\"312\" y=\"108\" font-size=\"10\" fill=\"#8b8f96\" text-anchor=\"end\">24<\u002Ftext>\n  <\u002Fsvg>\n  <div style=\"display:flex;gap:14px;margin-top:6px;font-size:12px;color:#6b7078;white-space:nowrap\"><span style=\"display:flex;align-items:center;gap:6px\"><i style=\"width:10px;height:10px;border-radius:3px;background:#16a34a\"><\u002Fi>AI charges<\u002Fspan><span style=\"display:flex;align-items:center;gap:6px\"><i style=\"width:10px;height:10px;border-radius:3px;background:#3b6cff\"><\u002Fi>AI sells<\u002Fspan><span style=\"margin-left:auto\">electricity price<\u002Fspan><\u002Fdiv>\n  <div style=\"display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(20,30,50,0.08);font-size:13px;color:#6b7078;white-space:nowrap\">\n    <span>Today's revenue<\u002Fspan><span><b id=\"ai-rev\" style=\"color:#1b1d21;font-variant-numeric:tabular-nums\">€0<\u002Fb><\u002Fspan>\n  <\u002Fdiv>\n<\u002Fdiv>\n<script src=\"e27be9d9-1bfb-43b6-bb15-e8db2aa6a892\"><\u002Fscript>\n<script type=\"module\">\nconst stage = document.querySelector('three-d-stage');\nconst { THREE } = await stage.ready;\nconst root = new THREE.Group(); root.name = 'energy_site';\n\nconst M = (name, color, rough = 0.7, metal = 0, extra = {}) =>\n  Object.assign(new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal, ...extra }), { name });\nconst mat = {\n  ground:   M('ground', 0xf3f4f6, 0.95),\n  concrete: M('concrete', 0xd9dce0, 0.85),\n  cladding: M('cladding_dark', 0x4a4e55, 0.6, 0.2),\n  roof:     M('roof', 0x9a9ea5, 0.8),\n  steel:    M('steel_dark', 0x3a3d42, 0.5, 0.35),\n  panel:    M('pv_cell', 0x2c3a52, 0.3, 0.3),\n  frame:    M('aluminium', 0xb8bcc2, 0.4, 0.35),\n  battery:  M('battery_shell', 0xf7f8f9, 0.5, 0.05),\n  vent:     M('vent_grey', 0x8d9299, 0.6, 0.2),\n  green:    M('accent_green', 0x22c55e, 0.4, 0, { emissive: 0x16a34a, emissiveIntensity: 0.6 }),\n  warm:     M('warm_light', 0xf3b76a, 0.5, 0, { emissive: 0xe89a4a, emissiveIntensity: 0.7 }),\n  cable:    M('cable', 0xbfc3c8, 0.8),\n};\n\nconst add = (parent, name, geo, m, x = 0, y = 0, z = 0, cast = true) => {\n  const mesh = new THREE.Mesh(geo, m); mesh.name = name;\n  mesh.position.set(x, y, z); mesh.castShadow = cast; mesh.receiveShadow = true;\n  parent.add(mesh); return mesh;\n};\nconst box = (p, n, w, h, d, m, x, y, z) => add(p, n, new THREE.BoxGeometry(w, h, d), m, x, y, z);\nconst beam = (p, n, a, b, r, m) => {\n  const dir = new THREE.Vector3().subVectors(b, a), len = dir.length();\n  const mesh = add(p, n, new THREE.CylinderGeometry(r, r, len, 6), m);\n  mesh.position.copy(a).addScaledVector(dir, 0.5);\n  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());\n  return mesh;\n};\nconst V = (x, y, z) => new THREE.Vector3(x, y, z);\n\n// Ground slab\nconst SPREAD = 1.4;\n\n// ---------- Building ----------\nconst bld = new THREE.Group(); bld.name = 'building'; bld.position.set(0, 0, -22); root.add(bld);\nconst BW = 34, BD = 20, BH = 13;\nbox(bld, 'plinth', BW + 0.4, 3.2, BD + 0.4, mat.concrete, 0, 1.6, 0);\nbox(bld, 'cladding', BW, BH - 3.2 - 0.002, BD, mat.cladding, 0, 3.2 + (BH - 3.2) / 2, 0);\nfor (const [w, d, x, z] of [[BW + 0.3, 0.3, 0, BD / 2], [BW + 0.3, 0.3, 0, -BD / 2], [0.3, BD, BW / 2, 0], [0.3, BD, -BW / 2, 0]])\n  box(bld, 'parapet', w, 0.6, d, mat.cladding, x, BH + 0.3, z);\nbox(bld, 'roof', BW - 0.4, 0.1, BD - 0.4, mat.roof, 0, BH + 0.06, 0);\nfor (let i = 0; i < 34; i++) { // vertical ribs on cladding\n  const x = -BW / 2 + 0.5 + i * (BW - 1) / 33;\n  box(bld, `rib_front_${i}`, 0.12, BH - 3.4, 0.12, mat.steel, x, 3.2 + (BH - 3.2) / 2, BD / 2 + 0.06);\n}\nfor (let i = 0; i < 6; i++) box(bld, `window_${i}`, 1.6, 0.9, 0.05, mat.warm, -BW / 2 + 2 + i * 1.9, 9.5, BD / 2 + 0.14);\n// loading bay recess\nbox(bld, 'loading_bay', 7, 3, 0.2, mat.warm, 6, 1.5, BD / 2 + 0.12);\nbox(bld, 'canopy', 8, 0.25, 2, mat.steel, 6, 3.3, BD / 2 + 1);\n\n// ---------- Pylons ----------\nfunction pylon(name, x, z) {\n  const g = new THREE.Group(); g.name = name; g.position.set(x, 0, z); root.add(g);\n  const H = 26, base = 3.2, top = 0.7;\n  const w = y => base + (top - base) * (y / H);\n  const corners = [[1, 1], [1, -1], [-1, -1], [-1, 1]];\n  corners.forEach(([sx, sz], i) => beam(g, `leg_${i}`, V(sx * base, 0, sz * base), V(sx * top, H, sz * top), 0.12, mat.steel));\n  const levels = 9;\n  for (let l = 0; l < levels; l++) {\n    const y0 = (l / levels) * H, y1 = ((l + 1) / levels) * H, a = w(y0), b = w(y1);\n    for (let f = 0; f < 4; f++) {\n      const [sx0, sz0] = corners[f], [sx1, sz1] = corners[(f + 1) % 4];\n      const p0 = V(sx0 * a, y0, sz0 * a), p1 = V(sx1 * a, y0, sz1 * a);\n      const q0 = V(sx0 * b, y1, sz0 * b), q1 = V(sx1 * b, y1, sz1 * b);\n      beam(g, `brace_${l}_${f}_a`, p0, q1, 0.05, mat.steel);\n      beam(g, `brace_${l}_${f}_b`, p1, q0, 0.05, mat.steel);\n      beam(g, `ring_${l}_${f}`, q0, q1, 0.06, mat.steel);\n    }\n  }\n  // cross-arms\n  [[H * 0.62, 6], [H * 0.78, 5], [H * 0.92, 3.8]].forEach(([y, len], k) => {\n    const hw = w(y);\n    for (const s of [1, -1]) {\n      beam(g, `arm_${k}_${s}_top`, V(s * hw, y, hw), V(s * (hw + len), y, 0), 0.07, mat.steel);\n      beam(g, `arm_${k}_${s}_bot`, V(s * hw, y, -hw), V(s * (hw + len), y, 0), 0.07, mat.steel);\n      beam(g, `arm_${k}_${s}_low`, V(s * hw, y - 1.2, 0), V(s * (hw + len), y, 0), 0.06, mat.steel);\n      add(g, `insulator_${k}_${s}`, new THREE.CylinderGeometry(0.18, 0.18, 1.4, 12), mat.frame, s * (hw + len - 0.3), y - 0.7, 0);\n    }\n  });\n  beam(g, 'peak', V(0, H, 0), V(0, H + 2.5, 0), 0.08, mat.steel);\n  corners.forEach(([sx, sz], i) => box(g, `footing_${i}`, 1.2, 0.4, 1.2, mat.concrete, sx * base, 0.2, sz * base));\n  return g;\n}\nconst pA = pylon('pylon_A', -46, -6); pA.rotation.y = Math.PI / 4;\nconst pB = pylon('pylon_B', -36, 16); pB.rotation.y = Math.PI / 4;\n\n// ---------- Solar arrays ----------\nfunction solarRow(name, x, z) {\n  const g = new THREE.Group(); g.name = name; g.position.set(x, 0, z); g.rotation.y = -Math.PI / 14; g.scale.setScalar(1.0); root.add(g);\n  const cols = 14, rows = 4, pw = 1.9, ph = 1.1, tilt = THREE.MathUtils.degToRad(28);\n  const table = new THREE.Group(); table.name = 'table'; table.position.y = 3.0; table.rotation.x = tilt; g.add(table);\n  const W = cols * (pw + 0.04), D = rows * (ph + 0.04);\n  box(table, 'table_frame', W + 0.2, 0.08, D + 0.2, mat.frame, 0, -0.06, 0);\n  for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) {\n    box(table, `module_${c}_${r}`, pw, 0.05, ph, mat.panel, -W / 2 + (c + 0.5) * (pw + 0.04), 0.01, -D / 2 + (r + 0.5) * (ph + 0.04));\n  }\n  for (let i = 0; i < 5; i++) {\n    const px = -W / 2 + 1 + i * (W - 2) / 4;\n    const fz = Math.cos(tilt) * D / 2, fy = Math.sin(tilt) * D / 2;\n    beam(g, `post_front_${i}`, V(px, 0, fz - 0.2), V(px, 2.2 - fy + 0.1, fz - 0.2), 0.07, mat.frame);\n    beam(g, `post_back_${i}`, V(px, 0, -fz + 0.2), V(px, 2.2 + fy - 0.1, -fz + 0.2), 0.07, mat.frame);\n    beam(g, `strut_${i}`, V(px, 0, fz - 0.2), V(px, 2.2 + fy - 0.1, -fz + 0.2), 0.05, mat.frame);\n  }\n  return g;\n}\nconst rows = [];\nfor (let r = 0; r < 4; r++) rows[r] = solarRow(`solar_row_${r + 1}`, 34, 0 + r * 8);\n\nconst socMat = [0, 1, 2, 3].map(i => M(`soc_led_${i}`, 0x22c55e, 0.4, 0, { emissive: 0x16a34a, emissiveIntensity: 0.6 }));\n// ---------- Battery storage (accumulators) ----------\nconst bess = new THREE.Group(); bess.name = 'battery_storage'; bess.position.set(0, 0, 12); bess.rotation.y = -Math.PI / 14; root.add(bess);\nbox(bess, 'bess_pad', 34, 0.3, 17, M('pad_dark', 0x9ea3aa, 0.9), 0, 0.15, 0);\nconst UW = 8, UH = 3.2, UD = 3;\nfor (let u = 0; u < 6; u++) {\n  const g = new THREE.Group(); g.name = `battery_unit_${u + 1}`; g.position.set(-11 + (u % 3) * 9.4, 0.3, u < 3 ? -3.8 : 3.8); bess.add(g);\n  box(g, 'shell', UW, UH, UD, mat.battery, 0, UH / 2, 0);\n  box(g, 'roof_cap', UW + 0.1, 0.12, UD + 0.1, mat.vent, 0, UH + 0.06, 0);\n  box(g, 'base_rail', UW + 0.05, 0.14, UD + 0.05, mat.steel, 0, 0.07, 0);\n  for (let d = 0; d < 4; d++) { // cabinet doors\n    const dx = -UW / 2 + 1.0 + d * 2.0;\n    box(g, `door_${d}`, 1.9, UH - 0.5, 0.03, mat.battery, dx, UH / 2, UD / 2 + 0.016);\n    box(g, `door_seam_${d}`, 0.03, UH - 0.5, 0.04, mat.vent, dx + 0.98, UH / 2, UD / 2 + 0.01);\n    box(g, `handle_${d}`, 0.05, 0.35, 0.06, mat.steel, dx + 0.75, UH / 2, UD / 2 + 0.05);\n    for (let s = 0; s < 4; s++) box(g, `louvre_${d}_${s}`, 1.0, 0.04, 0.03, mat.vent, dx, 0.55 + s * 0.12, UD / 2 + 0.04);\n  }\n  box(g, 'status_bar', 1.2, 0.12, 0.03, mat.green, UW / 2 - 1.0, UH - 0.22, UD / 2 + 0.035);\n  // HVAC units on the side\n  box(g, 'hvac', 0.5, 1.2, 1.4, mat.vent, UW / 2 + 0.25, 1.4, 0);\n  add(g, 'hvac_fan', new THREE.CylinderGeometry(0.42, 0.42, 0.04, 32), mat.steel, UW / 2 + 0.52, 1.4, 0).rotation.z = Math.PI / 2;\n  // charge-level bars on end (green)\n  for (let b = 0; b < 4; b++) box(g, `soc_${b}`, 0.03, 0.14, 0.4, socMat[b], -UW / 2 - 0.016, 1.0 + b * 0.2, 0);\n}\n// PCS / inverter cabinet\nconst pcs = new THREE.Group(); pcs.name = 'inverter_pcs'; pcs.position.set(15, 0.3, 0); bess.add(pcs);\nbox(pcs, 'pcs_body', 2.2, 2.2, 1.8, mat.vent, 0, 1.1, 0);\nbox(pcs, 'pcs_panel', 1.6, 1.4, 0.03, mat.battery, 0, 1.2, 0.916);\nbox(pcs, 'pcs_led', 0.4, 0.08, 0.03, mat.green, 0, 1.75, 0.94);\n// AI controller cabinet\nconst aiMat = M('ai_glow', 0x5b8cff, 0.35, 0, { emissive: 0x3b6cff, emissiveIntensity: 0.9 });\nconst ai = new THREE.Group(); ai.name = 'ai_controller'; ai.position.set(15, 0.3, -4.5); bess.add(ai);\nbox(ai, 'ai_body', 1.8, 2.6, 1.6, mat.steel, 0, 1.3, 0);\nbox(ai, 'ai_screen', 1.2, 0.7, 0.03, aiMat, 0, 1.9, 0.816);\nfor (let s = 0; s < 3; s++) box(ai, `ai_rack_${s}`, 1.3, 0.08, 0.03, mat.vent, 0, 0.6 + s * 0.3, 0.816);\nadd(ai, 'ai_mast', new THREE.CylinderGeometry(0.06, 0.06, 2.2, 12), mat.frame, 0, 3.7, 0);\nconst aiCore = add(ai, 'ai_core', new THREE.SphereGeometry(0.32, 32, 16), aiMat, 0, 4.9, 0);\nconst aiRing = add(ai, 'ai_ring', new THREE.TorusGeometry(0.7, 0.05, 12, 64), aiMat, 0, 4.9, 0);\n// bolt emblem on middle unit roof\nconst bolt = new THREE.Shape([[0.3, 1], [-0.35, -0.05], [0.02, -0.05], [-0.3, -1], [0.38, 0.12], [0.0, 0.12]].map(p => new THREE.Vector2(...p)));\nconst boltMesh = add(bess, 'roof_emblem', new THREE.ExtrudeGeometry(bolt, { depth: 0.04, bevelEnabled: false }), mat.green, -1.6, 0.3 + UH + 0.13, 3.8);\nboltMesh.rotation.x = -Math.PI / 2;\n\n// ---------- Spread layout, then wire real connections ----------\nroot.children.forEach(c => { if (c.isGroup) { c.position.x *= SPREAD; c.position.z *= SPREAD; } });\nroot.updateMatrixWorld(true);\nconst W = (obj, x, y, z) => obj.localToWorld(V(x, y, z));\nconst net = new THREE.Group(); net.name = 'cables'; root.add(net);\nconst flows = [];\nfunction terminal(name, p, h = 1.2) {\n  add(net, name + '_riser', new THREE.CylinderGeometry(0.2, 0.2, h, 12), mat.cable, p.x, h / 2, p.z);\n  box(net, name + '_junction', 0.9, 0.7, 0.9, mat.vent, p.x, h, p.z);\n}\nfunction orthoPath(pts, r = 4) {\n  const path = new THREE.CurvePath();\n  const P = pts.map(p => V(p.x, 0.18, p.z));\n  let cur = P[0];\n  for (let i = 1; i < P.length - 1; i++) {\n    const inD = P[i].clone().sub(P[i - 1]), outD = P[i + 1].clone().sub(P[i]);\n    const rr = Math.min(r, inD.length() / 2, outD.length() / 2);\n    const s = P[i].clone().addScaledVector(inD.normalize(), -rr), e = P[i].clone().addScaledVector(outD.normalize(), rr);\n    if (cur.distanceTo(s) > 1e-3) path.add(new THREE.LineCurve3(cur, s));\n    path.add(new THREE.QuadraticBezierCurve3(s, P[i].clone(), e));\n    cur = e;\n  }\n  path.add(new THREE.LineCurve3(cur, P[P.length - 1]));\n  return path;\n}\nfunction cable(name, pts, flow) {\n  const curve = orthoPath(pts);\n  const segs = Math.max(64, Math.round(curve.getLength() * 3));\n  add(net, name, new THREE.TubeGeometry(curve, segs, 0.28, 12, false), mat.cable, 0, 0, 0, false);\n  terminal(name + '_a', pts[0]); terminal(name + '_b', pts[pts.length - 1]);\n  if (flow) flows.push({ name, curve, mat: flow, len: curve.getLength(), on: 1, amt: 1 });\n}\n// terminals\nconst pAfoot = W(pA, 0, 0, 0), pBfoot = W(pB, 0, 0, 0);\nconst pcsOut = W(pcs, 1.8, -0.3, 0), bessBack = W(bess, -4, 0, -9.5);\nroot.remove(bld);\nconst comb = rows.map((g, r) => {\n  const p = W(g, -15.2, 0, 2.6);\n  box(net, `combiner_box_${r + 1}`, 1.0, 1.4, 0.5, mat.battery, p.x, 0.7, p.z);\n  return p;\n});\nconst flowGreen = mat.green;\nconst cx = comb[0].x, busZ = -6, loopZ = 52, midX = (cx + pcsOut.x) / 2;\nconst P2 = (x, z) => V(x, 0, z);\ncable('cable_solar_trunk', [comb[3], comb[0]], flowGreen);\ncable('cable_solar_battery', [comb[0], P2(midX, comb[0].z), P2(midX, pcsOut.z), pcsOut], flowGreen);\ncable('cable_battery_grid', [bessBack, P2(bessBack.x, busZ), P2(pBfoot.x, busZ), pBfoot], flowGreen);\ncable('cable_solar_grid', [comb[3], P2(cx - 4, comb[3].z), P2(cx - 4, loopZ), P2(pBfoot.x, loopZ), pBfoot], flowGreen);\n\n// overhead conductors between pylons\nconst tipsA = [], tipsB = [];\npA.traverse(o => o.name.startsWith('insulator_') && tipsA.push(o));\npB.traverse(o => o.name.startsWith('insulator_') && tipsB.push(o));\ntipsA.forEach((ia, k) => {\n  const a = ia.localToWorld(V(0, -0.7, 0)), b = tipsB[k].localToWorld(V(0, -0.7, 0));\n  const mid = a.clone().lerp(b, 0.5); mid.y -= 2.2;\n  const c = new THREE.QuadraticBezierCurve3(a, mid, b);\n  add(net, `overhead_line_${k}`, new THREE.TubeGeometry(c, 48, 0.05, 6, false), mat.steel, 0, 0, 0, false);\n});\n\nstage.setObject(root);\n\n// ---------- Animation: energy pulses, fans, status LEDs ----------\nconst fx = new THREE.Group(); fx.name = 'energy_flow_fx'; root.add(fx);\nconst dashGeo = new THREE.CapsuleGeometry(0.2, 2.2, 6, 12);\nconst UP = V(0, 1, 0);\nflows.forEach(f => {\n  f.dashes = [];\n  const n = Math.max(3, Math.round(f.len / 7));\n  for (let k = 0; k < n; k++) {\n    const m = new THREE.Mesh(dashGeo, f.mat); m.name = 'energy_dash'; m.castShadow = false;\n    fx.add(m); f.dashes.push({ m, off: k / n });\n  }\n});\nconst waves = [0, 1, 2].map(k => {\n  const m = new THREE.Mesh(new THREE.TorusGeometry(1, 0.06, 8, 64), aiMat.clone()); m.name = 'ai_signal';\n  m.material.transparent = true; m.rotation.x = Math.PI / 2; fx.add(m); return { m, off: k / 3 };\n});\nconst aiPos = aiCore.getWorldPosition(V());\nconst FLOW = Object.fromEntries(flows.map(f => [f.name, f]));\nconst fans = [], leds = [];\nroot.traverse(o => { if (o.name === 'hvac_fan') fans.push(o); });\n// ---------- Labels ----------\nconst labelDefs = [\n  { id: 'grid', at: pB.localToWorld(V(0, 28.5, 0)), val: '0', unit: 'kW', ttl: 'Grid · export', rise: 90 },\n  { id: 'bat', at: W(bess, -4, 4, 0), val: '0', unit: '%', ttl: 'Batteries', rise: 150 },\n  { id: 'ai', at: aiPos.clone().add(V(0, 1.2, 0)), val: 'AI', unit: '', ttl: 'Waiting', rise: 60 },\n  { id: 'pv', at: W(rows[1], 0, 4, 0), val: '0', unit: 'kW', ttl: 'Solar plant', rise: 170 },\n];\nconst layer = document.getElementById('labels');\nlabelDefs.forEach(d => {\n  d.el = document.createElement('div'); d.el.className = 'lbl';\n  d.el.innerHTML = `<div class=\"line\" style=\"height:${d.rise}px\"><\u002Fdiv><div class=\"txt\" style=\"top:-${d.rise}px\"><div class=\"val\"><span class=\"v\">${d.val}<\u002Fspan><small>${d.unit}<\u002Fsmall><\u002Fdiv><div class=\"ttl\">${d.ttl}<\u002Fdiv><\u002Fdiv>`;\n  layer.appendChild(d.el);\n  d.v = d.el.querySelector('.v'); d.t = d.el.querySelector('.ttl'); d.u = d.el.querySelector('small');\n});\nconst L = Object.fromEntries(labelDefs.map(d => [d.id, d]));\nL.ai.v.style.color = '#3b6cff';\n\n// ---------- AI dispatch simulation (24 h in 36 s) ----------\nconst DAY = 36, CAP = 2.4, PMAX = 1.2;\nconst price = hr => 0.022 * (3.2 + 3.4 * Math.exp(-((hr - 8.5) ** 2) / 3) + 4.6 * Math.exp(-((hr - 19.5) ** 2) / 4) - 1.6 * Math.exp(-((hr - 13) ** 2) / 8) - 0.8 * Math.exp(-((hr - 3) ** 2) / 6));\nconst solar = hr => Math.max(0, Math.sin((hr - 6) / 13 * Math.PI)) * 1.023;\nconst PTS = [...Array(97)].map((_, i) => price(i / 4));\nconst pMin = Math.min(...PTS), pMax = Math.max(...PTS);\nconst chart = document.getElementById('ai-chart');\nconst chX = hr => 8 + hr / 24 * 304, cy = p => 92 - (p - pMin) / (pMax - pMin) * 76;\nchart.querySelector('.curve').setAttribute('d', PTS.map((p, i) => (i ? 'L' : 'M') + chX(i / 4).toFixed(1) + ' ' + cy(p).toFixed(1)).join(' '));\nconst buyT = pMin + (pMax - pMin) * 0.28, sellT = pMin + (pMax - pMin) * 0.62;\n{\n  const zg = chart.querySelector('.zones'); let cur = null, start = 0;\n  const plan = hr => price(hr) >= sellT ? 'sell' : (solar(hr) > 0.05 ? 'charge' : null);\n  for (let i = 0; i <= 96; i++) {\n    const hr = i / 4, m = i < 96 ? plan(hr) : null;\n    if (m !== cur) {\n      if (cur) { const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');\n        r.setAttribute('x', chX(start)); r.setAttribute('width', chX(hr) - chX(start)); r.setAttribute('y', 8); r.setAttribute('height', 88); r.setAttribute('rx', 4);\n        r.setAttribute('fill', cur === 'sell' ? '#3b6cff' : '#16a34a'); r.setAttribute('fill-opacity', 0.14); zg.appendChild(r); }\n      cur = m; start = hr;\n    }\n  }\n}\nconst ui = { clock: document.getElementById('ai-clock'), mode: document.getElementById('ai-mode'), why: document.getElementById('ai-why'), price: document.getElementById('ai-price'), rev: document.getElementById('ai-rev'), dot: chart.querySelector('.dot'), cursor: chart.querySelector('.cursor') };\nlet soc = 0.35, rev = 0, lastHr = 0;\nconst MODES = {\n  charge: { t: 'Charging', why: 'Low price — AI stores solar energy', c: '#16a34a' },\n  sell:   { t: 'Selling', why: 'Peak price — AI discharges batteries to the grid', c: '#3b6cff' },\n  hold:   { t: 'Waiting', why: 'AI is waiting for a better price', c: '#8b8f96' },\n};\nfunction simulate(t, dt) {\n  const hr = (t % DAY) / DAY * 24; if (hr < lastHr) rev = 0; lastHr = hr;\n  const p = price(hr), pv = solar(hr), dh = dt / DAY * 24;\n  let mode = 'hold', batP = 0;\n  if (p >= sellT && soc > 0.08) { mode = 'sell'; batP = -Math.min(PMAX, soc * CAP / Math.max(dh, 1e-3)); }\n  else if (p <= sellT && pv > 0.05 && soc < 0.98) { mode = 'charge'; batP = Math.min(pv, PMAX); }\n  else if (p <= buyT && soc < 0.98) { mode = 'hold'; }\n  soc = Math.min(1, Math.max(0, soc + batP * dh / CAP));\n  const pvToGrid = Math.max(0, pv - Math.max(0, batP)), batToGrid = Math.max(0, -batP), gridP = pvToGrid + batToGrid;\n  rev += gridP * p * dh * 1000;\n  FLOW.cable_solar_trunk.on = pv > 0.05 ? 1 : 0;\n  FLOW.cable_solar_battery.on = mode === 'charge' ? 1 : 0;\n  FLOW.cable_battery_grid.on = mode === 'sell' ? 1 : 0;\n  FLOW.cable_solar_grid.on = pvToGrid > 0.05 ? 1 : 0;\n  socMat.forEach((m, i) => { const lit = soc > i / 4 + 0.05; m.color.setHex(lit ? 0x22c55e : 0x8d9299); m.emissiveIntensity = lit ? 0.6 : 0; });\n  const fmt = n => n.toLocaleString('en-US', { maximumFractionDigits: 0 });\n  L.pv.v.textContent = fmt(pv * 1000); L.grid.v.textContent = fmt(gridP * 1000);\n  L.bat.v.textContent = Math.round(soc * 100); L.bat.u.textContent = '% · ' + (soc * CAP).toFixed(1) + ' MWh';\n  const M_ = MODES[mode]; L.ai.t.textContent = M_.t; L.ai.t.style.color = M_.c;\n  ui.clock.textContent = String(Math.floor(hr)).padStart(2, '0') + ':' + String(Math.floor((hr % 1) * 60)).padStart(2, '0');\n  ui.mode.textContent = M_.t; ui.mode.style.background = M_.c; ui.why.textContent = M_.why;\n  ui.price.textContent = '€' + p.toFixed(3) + '/kWh'; ui.rev.textContent = '€' + fmt(rev);\n  ui.dot.setAttribute('cx', chX(hr)); ui.dot.setAttribute('cy', cy(p)); ui.dot.setAttribute('fill', M_.c);\n  ui.cursor.setAttribute('x1', chX(hr)); ui.cursor.setAttribute('x2', chX(hr));\n  aiMat.emissiveIntensity = mode === 'hold' ? 0.5 : 1.1;\n  return mode;\n}\nlet lastT = 0;\nfunction placeLabels() {\n  const cam = stage._camera; if (!cam) return;\n  const r = stage.getBoundingClientRect();\n  labelDefs.forEach(d => {\n    const p = d.at.clone().project(cam);\n    const vis = p.z < 1 && p.z > -1;\n    d.el.style.display = vis ? '' : 'none';\n    d.el.style.transform = `translate(${r.left + (p.x + 1) / 2 * r.width}px, ${r.top + (1 - p.y) / 2 * r.height}px)`;\n  });\n}\nconst clock = new THREE.Clock();\n(function tick() {\n  const t = clock.getElapsedTime(), dt = Math.min(0.1, t - lastT); lastT = t;\n  const mode = simulate(t, dt);\n  aiRing.rotation.y = t * 1.5; aiRing.rotation.x = Math.sin(t) * 0.4;\n  waves.forEach(w => { const u = (w.off + t * 0.5) % 1; w.m.position.set(aiPos.x, 0.6, aiPos.z); w.m.scale.setScalar(1 + u * 14); w.m.material.opacity = (1 - u) * (mode === 'hold' ? 0.25 : 0.7); });\n  flows.forEach(f => { f.amt += (f.on - f.amt) * Math.min(1, dt * 4); });\n  flows.forEach(f => f.dashes.forEach(p => {\n    const u = (p.off + t * 8 / f.len) % 1;\n    const pos = f.curve.getPointAt(u), tan = f.curve.getTangentAt(u);\n    p.m.position.set(pos.x, 0.52, pos.z);\n    p.m.quaternion.setFromUnitVectors(UP, tan.normalize());\n    const fade = Math.min(1, u * 12, (1 - u) * 12) * f.amt; p.m.visible = fade > 0.02; p.m.scale.set(fade, fade, fade);\n  }));\n  fans.forEach(fn => fn.rotation.x = t * 6);\n  mat.green.emissiveIntensity = 0.45 + 0.35 * (0.5 + 0.5 * Math.sin(t * 3));\n  placeLabels();\n  requestAnimationFrame(tick);\n})();\n<\u002Fscript>\n\n\n<\u002Fbody><\u002Fhtml>"
+  </script>
+</body>
+</html>

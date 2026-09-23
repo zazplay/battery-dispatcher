@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>AI Battery Energy Site</title>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "three/addons/controls/OrbitControls.js": "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js",
+    "three/addons/exporters/OBJExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js",
+    "three/addons/exporters/GLTFExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js"
+  },
+  "integrity": {
+    "https://unpkg.com/three@0.184.0/build/three.module.js": "sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J",
+    "https://unpkg.com/three@0.184.0/build/three.core.js": "sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT",
+    "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js": "sha384-4rziNxOBZKQ69i+w+f89KJ55TCYquwchVbByQwmaOeIOXdOU2PLDn3kOfXHwIJC9",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js": "sha384-nbwtoZENJD3Vq+ACK0CuGQdPMuDWHkamC2KJD70EV5nfg6jQjfppKOea07YJN+N3",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js": "sha384-VofkvpG6HERhFCYbsUOHeNXBCqID2nfqkQqnVzE1jc/oPcz+qJ13ADdXH08hE+cQ"
+  }
+}
+</script>
+<style>
+  html,body{margin:0;height:100%;background:#fff}
+  three-d-stage:not(:defined){visibility:hidden}
+  #labels{position:fixed;inset:0;z-index:2;pointer-events:none;font-family:-apple-system,"SF Pro Display","Helvetica Neue",Helvetica,sans-serif}
+  .lbl{position:absolute;left:0;top:0;will-change:transform}
+  .lbl .line{position:absolute;left:0;bottom:0;width:1px;background:#8b8f96}
+  .lbl .txt{position:absolute;left:14px;white-space:nowrap;transform:translateY(-100%)}
+  .lbl .val{font-size:30px;font-weight:600;color:#1b1d21;letter-spacing:-0.5px}
+  .lbl .val small{font-size:20px;font-weight:400;color:#8b8f96;margin-left:4px}
+  .lbl .ttl{font-size:20px;color:#8b8f96;margin-top:2px}
+</style>
+</head>
+<body>
+
+<three-d-stage name="energy-site" background="linear-gradient(180deg, #cfe3f7 0%, #e9f2fb 45%, #ffffff 100%)"></three-d-stage>
+<div id="labels"></div>
+<div id="ai-panel" style="position:fixed;left:16px;bottom:52px;width:300px;box-sizing:border-box;padding:14px 14px 10px;z-index:1;background:rgba(255,255,255,0.86);backdrop-filter:blur(12px);border:1px solid rgba(20,30,50,0.08);border-radius:16px;font-family:-apple-system,'SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#1b1d21;box-shadow:0 8px 30px rgba(30,50,90,0.08)">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <div style="font-size:15px;font-weight:600;min-width:0">AI battery dispatcher</div>
+    <div id="ai-clock" style="font-size:15px;font-variant-numeric:tabular-nums;color:#8b8f96">00:00</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-top:12px">
+    <div id="ai-mode" style="padding:4px 10px;border-radius:999px;color:#fff;font-size:13px;font-weight:600;background:#8b8f96">Waiting</div>
+    <div id="ai-price" style="white-space:nowrap;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums">—</div>
+  </div>
+  <div id="ai-why" style="font-size:13px;color:#6b7078;margin-top:8px;min-height:18px;text-wrap:pretty">—</div>
+  <svg id="ai-chart" viewBox="0 0 320 110" style="width:100%;height:80px;margin-top:10px;display:block">
+    <g class="zones"></g>
+    <path class="curve" fill="none" stroke="#1b1d21" stroke-width="1.6"></path>
+    <line class="cursor" y1="10" y2="96" stroke="#c4c8ce" stroke-width="1"></line>
+    <circle class="dot" r="4.5" fill="#8b8f96"></circle>
+    <text x="8" y="108" font-size="10" fill="#8b8f96">00</text><text x="160" y="108" font-size="10" fill="#8b8f96" text-anchor="middle">12</text><text x="312" y="108" font-size="10" fill="#8b8f96" text-anchor="end">24</text>
+  </svg>
+  <div style="display:flex;gap:14px;margin-top:6px;font-size:12px;color:#6b7078;white-space:nowrap"><span style="display:flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:#16a34a"></i>AI charges</span><span style="display:flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:#3b6cff"></i>AI sells</span><span style="margin-left:auto">electricity price</span></div>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(20,30,50,0.08);font-size:13px;color:#6b7078;white-space:nowrap">
+    <span>Today's revenue</span><span><b id="ai-rev" style="color:#1b1d21;font-variant-numeric:tabular-nums">€0</b></span>
+  </div>
+</div>
+<script src="e27be9d9.js"></script>
+<script type="module">
+const stage = document.querySelector('three-d-stage');
+const { THREE } = await stage.ready;
+const root = new THREE.Group(); root.name = 'energy_site';
+
+const M = (name, color, rough = 0.7, metal = 0, extra = {}) =>
+  Object.assign(new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal, ...extra }), { name });
+const mat = {
+  ground:   M('ground', 0xf3f4f6, 0.95),
+  concrete: M('concrete', 0xd9dce0, 0.85),
+  cladding: M('cladding_dark', 0x4a4e55, 0.6, 0.2),
+  roof:     M('roof', 0x9a9ea5, 0.8),
+  steel:    M('steel_dark', 0x3a3d42, 0.5, 0.35),
+  panel:    M('pv_cell', 0x2c3a52, 0.3, 0.3),
+  frame:    M('aluminium', 0xb8bcc2, 0.4, 0.35),
+  battery:  M('battery_shell', 0xf7f8f9, 0.5, 0.05),
+  vent:     M('vent_grey', 0x8d9299, 0.6, 0.2),
+  green:    M('accent_green', 0x22c55e, 0.4, 0, { emissive: 0x16a34a, emissiveIntensity: 0.6 }),
+  warm:     M('warm_light', 0xf3b76a, 0.5, 0, { emissive: 0xe89a4a, emissiveIntensity: 0.7 }),
+  cable:    M('cable', 0xbfc3c8, 0.8),
+};
+
+const add = (parent, name, geo, m, x = 0, y = 0, z = 0, cast = true) => {
+  const mesh = new THREE.Mesh(geo, m); mesh.name = name;
+  mesh.position.set(x, y, z); mesh.castShadow = cast; mesh.receiveShadow = true;
+  parent.add(mesh); return mesh;
+};
+const box = (p, n, w, h, d, m, x, y, z) => add(p, n, new THREE.BoxGeometry(w, h, d), m, x, y, z);
+const beam = (p, n, a, b, r, m) => {
+  const dir = new THREE.Vector3().subVectors(b, a), len = dir.length();
+  const mesh = add(p, n, new THREE.CylinderGeometry(r, r, len, 6), m);
+  mesh.position.copy(a).addScaledVector(dir, 0.5);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+  return mesh;
+};
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+
+// Ground slab
+const SPREAD = 1.4;
+
+// ---------- Building ----------
+const bld = new THREE.Group(); bld.name = 'building'; bld.position.set(0, 0, -22); root.add(bld);
+const BW = 34, BD = 20, BH = 13;
+box(bld, 'plinth', BW + 0.4, 3.2, BD + 0.4, mat.concrete, 0, 1.6, 0);
+box(bld, 'cladding', BW, BH - 3.2 - 0.002, BD, mat.cladding, 0, 3.2 + (BH - 3.2) / 2, 0);
+for (const [w, d, x, z] of [[BW + 0.3, 0.3, 0, BD / 2], [BW + 0.3, 0.3, 0, -BD / 2], [0.3, BD, BW / 2, 0], [0.3, BD, -BW / 2, 0]])
+  box(bld, 'parapet', w, 0.6, d, mat.cladding, x, BH + 0.3, z);
+box(bld, 'roof', BW - 0.4, 0.1, BD - 0.4, mat.roof, 0, BH + 0.06, 0);
+for (let i = 0; i < 34; i++) { // vertical ribs on cladding
+  const x = -BW / 2 + 0.5 + i * (BW - 1) / 33;
+  box(bld, `rib_front_${i}`, 0.12, BH - 3.4, 0.12, mat.steel, x, 3.2 + (BH - 3.2) / 2, BD / 2 + 0.06);
+}
+for (let i = 0; i < 6; i++) box(bld, `window_${i}`, 1.6, 0.9, 0.05, mat.warm, -BW / 2 + 2 + i * 1.9, 9.5, BD / 2 + 0.14);
+// loading bay recess
+box(bld, 'loading_bay', 7, 3, 0.2, mat.warm, 6, 1.5, BD / 2 + 0.12);
+box(bld, 'canopy', 8, 0.25, 2, mat.steel, 6, 3.3, BD / 2 + 1);
+
+// ---------- Pylons ----------
+function pylon(name, x, z) {
+  const g = new THREE.Group(); g.name = name; g.position.set(x, 0, z); root.add(g);
+  const H = 26, base = 3.2, top = 0.7;
+  const w = y => base + (top - base) * (y / H);
+  const corners = [[1, 1], [1, -1], [-1, -1], [-1, 1]];
+  corners.forEach(([sx, sz], i) => beam(g, `leg_${i}`, V(sx * base, 0, sz * base), V(sx * top, H, sz * top), 0.12, mat.steel));
+  const levels = 9;
+  for (let l = 0; l < levels; l++) {
+    const y0 = (l / levels) * H, y1 = ((l + 1) / levels) * H, a = w(y0), b = w(y1);
+    for (let f = 0; f < 4; f++) {
+      const [sx0, sz0] = corners[f], [sx1, sz1] = corners[(f + 1) % 4];
+      const p0 = V(sx0 * a, y0, sz0 * a), p1 = V(sx1 * a, y0, sz1 * a);
+      const q0 = V(sx0 * b, y1, sz0 * b), q1 = V(sx1 * b, y1, sz1 * b);
+      beam(g, `brace_${l}_${f}_a`, p0, q1, 0.05, mat.steel);
+      beam(g, `brace_${l}_${f}_b`, p1, q0, 0.05, mat.steel);
+      beam(g, `ring_${l}_${f}`, q0, q1, 0.06, mat.steel);
+    }
+  }
+  // cross-arms
+  [[H * 0.62, 6], [H * 0.78, 5], [H * 0.92, 3.8]].forEach(([y, len], k) => {
+    const hw = w(y);
+    for (const s of [1, -1]) {
+      beam(g, `arm_${k}_${s}_top`, V(s * hw, y, hw), V(s * (hw + len), y, 0), 0.07, mat.steel);
+      beam(g, `arm_${k}_${s}_bot`, V(s * hw, y, -hw), V(s * (hw + len), y, 0), 0.07, mat.steel);
+      beam(g, `arm_${k}_${s}_low`, V(s * hw, y - 1.2, 0), V(s * (hw + len), y, 0), 0.06, mat.steel);
+      add(g, `insulator_${k}_${s}`, new THREE.CylinderGeometry(0.18, 0.18, 1.4, 12), mat.frame, s * (hw + len - 0.3), y - 0.7, 0);
+    }
+  });
+  beam(g, 'peak', V(0, H, 0), V(0, H + 2.5, 0), 0.08, mat.steel);
+  corners.forEach(([sx, sz], i) => box(g, `footing_${i}`, 1.2, 0.4, 1.2, mat.concrete, sx * base, 0.2, sz * base));
+  return g;
+}
+const pA = pylon('pylon_A', -46, -6); pA.rotation.y = Math.PI / 4;
+const pB = pylon('pylon_B', -36, 16); pB.rotation.y = Math.PI / 4;
+
+// ---------- Solar arrays ----------
+function solarRow(name, x, z) {
+  const g = new THREE.Group(); g.name = name; g.position.set(x, 0, z); g.rotation.y = -Math.PI / 14; g.scale.setScalar(1.0); root.add(g);
+  const cols = 14, rows = 4, pw = 1.9, ph = 1.1, tilt = THREE.MathUtils.degToRad(28);
+  const table = new THREE.Group(); table.name = 'table'; table.position.y = 3.0; table.rotation.x = tilt; g.add(table);
+  const W = cols * (pw + 0.04), D = rows * (ph + 0.04);
+  box(table, 'table_frame', W + 0.2, 0.08, D + 0.2, mat.frame, 0, -0.06, 0);
+  for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) {
+    box(table, `module_${c}_${r}`, pw, 0.05, ph, mat.panel, -W / 2 + (c + 0.5) * (pw + 0.04), 0.01, -D / 2 + (r + 0.5) * (ph + 0.04));
+  }
+  for (let i = 0; i < 5; i++) {
+    const px = -W / 2 + 1 + i * (W - 2) / 4;
+    const fz = Math.cos(tilt) * D / 2, fy = Math.sin(tilt) * D / 2;
+    beam(g, `post_front_${i}`, V(px, 0, fz - 0.2), V(px, 2.2 - fy + 0.1, fz - 0.2), 0.07, mat.frame);
+    beam(g, `post_back_${i}`, V(px, 0, -fz + 0.2), V(px, 2.2 + fy - 0.1, -fz + 0.2), 0.07, mat.frame);
+    beam(g, `strut_${i}`, V(px, 0, fz - 0.2), V(px, 2.2 + fy - 0.1, -fz + 0.2), 0.05, mat.frame);
+  }
+  return g;
+}
+const rows = [];
+for (let r = 0; r < 4; r++) rows[r] = solarRow(`solar_row_${r + 1}`, 34, 0 + r * 8);
+
+const socMat = [0, 1, 2, 3].map(i => M(`soc_led_${i}`, 0x22c55e, 0.4, 0, { emissive: 0x16a34a, emissiveIntensity: 0.6 }));
+// ---------- Battery storage (accumulators) ----------
+const bess = new THREE.Group(); bess.name = 'battery_storage'; bess.position.set(0, 0, 12); bess.rotation.y = -Math.PI / 14; root.add(bess);
+box(bess, 'bess_pad', 34, 0.3, 17, M('pad_dark', 0x9ea3aa, 0.9), 0, 0.15, 0);
+const UW = 8, UH = 3.2, UD = 3;
+for (let u = 0; u < 6; u++) {
+  const g = new THREE.Group(); g.name = `battery_unit_${u + 1}`; g.position.set(-11 + (u % 3) * 9.4, 0.3, u < 3 ? -3.8 : 3.8); bess.add(g);
+  box(g, 'shell', UW, UH, UD, mat.battery, 0, UH / 2, 0);
+  box(g, 'roof_cap', UW + 0.1, 0.12, UD + 0.1, mat.vent, 0, UH + 0.06, 0);
+  box(g, 'base_rail', UW + 0.05, 0.14, UD + 0.05, mat.steel, 0, 0.07, 0);
+  for (let d = 0; d < 4; d++) { // cabinet doors
+    const dx = -UW / 2 + 1.0 + d * 2.0;
+    box(g, `door_${d}`, 1.9, UH - 0.5, 0.03, mat.battery, dx, UH / 2, UD / 2 + 0.016);
+    box(g, `door_seam_${d}`, 0.03, UH - 0.5, 0.04, mat.vent, dx + 0.98, UH / 2, UD / 2 + 0.01);
+    box(g, `handle_${d}`, 0.05, 0.35, 0.06, mat.steel, dx + 0.75, UH / 2, UD / 2 + 0.05);
+    for (let s = 0; s < 4; s++) box(g, `louvre_${d}_${s}`, 1.0, 0.04, 0.03, mat.vent, dx, 0.55 + s * 0.12, UD / 2 + 0.04);
+  }
+  box(g, 'status_bar', 1.2, 0.12, 0.03, mat.green, UW / 2 - 1.0, UH - 0.22, UD / 2 + 0.035);
+  // HVAC units on the side
+  box(g, 'hvac', 0.5, 1.2, 1.4, mat.vent, UW / 2 + 0.25, 1.4, 0);
+  add(g, 'hvac_fan', new THREE.CylinderGeometry(0.42, 0.42, 0.04, 32), mat.steel, UW / 2 + 0.52, 1.4, 0).rotation.z = Math.PI / 2;
+  // charge-level bars on end (green)
+  for (let b = 0; b < 4; b++) box(g, `soc_${b}`, 0.03, 0.14, 0.4, socMat[b], -UW / 2 - 0.016, 1.0 + b * 0.2, 0);
+}
+// PCS / inverter cabinet
+const pcs = new THREE.Group(); pcs.name = 'inverter_pcs'; pcs.position.set(15, 0.3, 0); bess.add(pcs);
+box(pcs, 'pcs_body', 2.2, 2.2, 1.8, mat.vent, 0, 1.1, 0);
+box(pcs, 'pcs_panel', 1.6, 1.4, 0.03, mat.battery, 0, 1.2, 0.916);
+box(pcs, 'pcs_led', 0.4, 0.08, 0.03, mat.green, 0, 1.75, 0.94);
+// AI controller cabinet
+const aiMat = M('ai_glow', 0x5b8cff, 0.35, 0, { emissive: 0x3b6cff, emissiveIntensity: 0.9 });
+const ai = new THREE.Group(); ai.name = 'ai_controller'; ai.position.set(15, 0.3, -4.5); bess.add(ai);
+box(ai, 'ai_body', 1.8, 2.6, 1.6, mat.steel, 0, 1.3, 0);
+box(ai, 'ai_screen', 1.2, 0.7, 0.03, aiMat, 0, 1.9, 0.816);
+for (let s = 0; s < 3; s++) box(ai, `ai_rack_${s}`, 1.3, 0.08, 0.03, mat.vent, 0, 0.6 + s * 0.3, 0.816);
+add(ai, 'ai_mast', new THREE.CylinderGeometry(0.06, 0.06, 2.2, 12), mat.frame, 0, 3.7, 0);
+const aiCore = add(ai, 'ai_core', new THREE.SphereGeometry(0.32, 32, 16), aiMat, 0, 4.9, 0);
+const aiRing = add(ai, 'ai_ring', new THREE.TorusGeometry(0.7, 0.05, 12, 64), aiMat, 0, 4.9, 0);
+// bolt emblem on middle unit roof
+const bolt = new THREE.Shape([[0.3, 1], [-0.35, -0.05], [0.02, -0.05], [-0.3, -1], [0.38, 0.12], [0.0, 0.12]].map(p => new THREE.Vector2(...p)));
+const boltMesh = add(bess, 'roof_emblem', new THREE.ExtrudeGeometry(bolt, { depth: 0.04, bevelEnabled: false }), mat.green, -1.6, 0.3 + UH + 0.13, 3.8);
+boltMesh.rotation.x = -Math.PI / 2;
+
+// ---------- Spread layout, then wire real connections ----------
+root.children.forEach(c => { if (c.isGroup) { c.position.x *= SPREAD; c.position.z *= SPREAD; } });
+root.updateMatrixWorld(true);
+const W = (obj, x, y, z) => obj.localToWorld(V(x, y, z));
+const net = new THREE.Group(); net.name = 'cables'; root.add(net);
+const flows = [];
+function terminal(name, p, h = 1.2) {
+  add(net, name + '_riser', new THREE.CylinderGeometry(0.2, 0.2, h, 12), mat.cable, p.x, h / 2, p.z);
+  box(net, name + '_junction', 0.9, 0.7, 0.9, mat.vent, p.x, h, p.z);
+}
+function orthoPath(pts, r = 4) {
+  const path = new THREE.CurvePath();
+  const P = pts.map(p => V(p.x, 0.18, p.z));
+  let cur = P[0];
+  for (let i = 1; i < P.length - 1; i++) {
+    const inD = P[i].clone().sub(P[i - 1]), outD = P[i + 1].clone().sub(P[i]);
+    const rr = Math.min(r, inD.length() / 2, outD.length() / 2);
+    const s = P[i].clone().addScaledVector(inD.normalize(), -rr), e = P[i].clone().addScaledVector(outD.normalize(), rr);
+    if (cur.distanceTo(s) > 1e-3) path.add(new THREE.LineCurve3(cur, s));
+    path.add(new THREE.QuadraticBezierCurve3(s, P[i].clone(), e));
+    cur = e;
+  }
+  path.add(new THREE.LineCurve3(cur, P[P.length - 1]));
+  return path;
+}
+function cable(name, pts, flow) {
+  const curve = orthoPath(pts);
+  const segs = Math.max(64, Math.round(curve.getLength() * 3));
+  add(net, name, new THREE.TubeGeometry(curve, segs, 0.28, 12, false), mat.cable, 0, 0, 0, false);
+  terminal(name + '_a', pts[0]); terminal(name + '_b', pts[pts.length - 1]);
+  if (flow) flows.push({ name, curve, mat: flow, len: curve.getLength(), on: 1, amt: 1 });
+}
+// terminals
+const pAfoot = W(pA, 0, 0, 0), pBfoot = W(pB, 0, 0, 0);
+const pcsOut = W(pcs, 1.8, -0.3, 0), bessBack = W(bess, -4, 0, -9.5);
+root.remove(bld);
+const comb = rows.map((g, r) => {
+  const p = W(g, -15.2, 0, 2.6);
+  box(net, `combiner_box_${r + 1}`, 1.0, 1.4, 0.5, mat.battery, p.x, 0.7, p.z);
+  return p;
+});
+const flowGreen = mat.green;
+const cx = comb[0].x, busZ = -6, loopZ = 52, midX = (cx + pcsOut.x) / 2;
+const P2 = (x, z) => V(x, 0, z);
+cable('cable_solar_trunk', [comb[3], comb[0]], flowGreen);
+cable('cable_solar_battery', [comb[0], P2(midX, comb[0].z), P2(midX, pcsOut.z), pcsOut], flowGreen);
+cable('cable_battery_grid', [bessBack, P2(bessBack.x, busZ), P2(pBfoot.x, busZ), pBfoot], flowGreen);
+cable('cable_solar_grid', [comb[3], P2(cx - 4, comb[3].z), P2(cx - 4, loopZ), P2(pBfoot.x, loopZ), pBfoot], flowGreen);
+
+// overhead conductors between pylons
+const tipsA = [], tipsB = [];
+pA.traverse(o => o.name.startsWith('insulator_') && tipsA.push(o));
+pB.traverse(o => o.name.startsWith('insulator_') && tipsB.push(o));
+tipsA.forEach((ia, k) => {
+  const a = ia.localToWorld(V(0, -0.7, 0)), b = tipsB[k].localToWorld(V(0, -0.7, 0));
+  const mid = a.clone().lerp(b, 0.5); mid.y -= 2.2;
+  const c = new THREE.QuadraticBezierCurve3(a, mid, b);
+  add(net, `overhead_line_${k}`, new THREE.TubeGeometry(c, 48, 0.05, 6, false), mat.steel, 0, 0, 0, false);
+});
+
+stage.setObject(root);
+
+// ---------- Animation: energy pulses, fans, status LEDs ----------
+const fx = new THREE.Group(); fx.name = 'energy_flow_fx'; root.add(fx);
+const dashGeo = new THREE.CapsuleGeometry(0.2, 2.2, 6, 12);
+const UP = V(0, 1, 0);
+flows.forEach(f => {
+  f.dashes = [];
+  const n = Math.max(3, Math.round(f.len / 7));
+  for (let k = 0; k < n; k++) {
+    const m = new THREE.Mesh(dashGeo, f.mat); m.name = 'energy_dash'; m.castShadow = false;
+    fx.add(m); f.dashes.push({ m, off: k / n });
+  }
+});
+const waves = [0, 1, 2].map(k => {
+  const m = new THREE.Mesh(new THREE.TorusGeometry(1, 0.06, 8, 64), aiMat.clone()); m.name = 'ai_signal';
+  m.material.transparent = true; m.rotation.x = Math.PI / 2; fx.add(m); return { m, off: k / 3 };
+});
+const aiPos = aiCore.getWorldPosition(V());
+const FLOW = Object.fromEntries(flows.map(f => [f.name, f]));
+const fans = [], leds = [];
+root.traverse(o => { if (o.name === 'hvac_fan') fans.push(o); });
+// ---------- Labels ----------
+const labelDefs = [
+  { id: 'grid', at: pB.localToWorld(V(0, 28.5, 0)), val: '0', unit: 'kW', ttl: 'Grid · export', rise: 90 },
+  { id: 'bat', at: W(bess, -4, 4, 0), val: '0', unit: '%', ttl: 'Batteries', rise: 150 },
+  { id: 'ai', at: aiPos.clone().add(V(0, 1.2, 0)), val: 'AI', unit: '', ttl: 'Waiting', rise: 60 },
+  { id: 'pv', at: W(rows[1], 0, 4, 0), val: '0', unit: 'kW', ttl: 'Solar plant', rise: 170 },
+];
+const layer = document.getElementById('labels');
+labelDefs.forEach(d => {
+  d.el = document.createElement('div'); d.el.className = 'lbl';
+  d.el.innerHTML = `<div class="line" style="height:${d.rise}px"></div><div class="txt" style="top:-${d.rise}px"><div class="val"><span class="v">${d.val}</span><small>${d.unit}</small></div><div class="ttl">${d.ttl}</div></div>`;
+  layer.appendChild(d.el);
+  d.v = d.el.querySelector('.v'); d.t = d.el.querySelector('.ttl'); d.u = d.el.querySelector('small');
+});
+const L = Object.fromEntries(labelDefs.map(d => [d.id, d]));
+L.ai.v.style.color = '#3b6cff';
+
+// ---------- AI dispatch simulation (24 h in 36 s) ----------
+const DAY = 36, CAP = 2.4, PMAX = 1.2;
+const price = hr => 0.022 * (3.2 + 3.4 * Math.exp(-((hr - 8.5) ** 2) / 3) + 4.6 * Math.exp(-((hr - 19.5) ** 2) / 4) - 1.6 * Math.exp(-((hr - 13) ** 2) / 8) - 0.8 * Math.exp(-((hr - 3) ** 2) / 6));
+const solar = hr => Math.max(0, Math.sin((hr - 6) / 13 * Math.PI)) * 1.023;
+const PTS = [...Array(97)].map((_, i) => price(i / 4));
+const pMin = Math.min(...PTS), pMax = Math.max(...PTS);
+const chart = document.getElementById('ai-chart');
+const chX = hr => 8 + hr / 24 * 304, cy = p => 92 - (p - pMin) / (pMax - pMin) * 76;
+chart.querySelector('.curve').setAttribute('d', PTS.map((p, i) => (i ? 'L' : 'M') + chX(i / 4).toFixed(1) + ' ' + cy(p).toFixed(1)).join(' '));
+const buyT = pMin + (pMax - pMin) * 0.28, sellT = pMin + (pMax - pMin) * 0.62;
+{
+  const zg = chart.querySelector('.zones'); let cur = null, start = 0;
+  const plan = hr => price(hr) >= sellT ? 'sell' : (solar(hr) > 0.05 ? 'charge' : null);
+  for (let i = 0; i <= 96; i++) {
+    const hr = i / 4, m = i < 96 ? plan(hr) : null;
+    if (m !== cur) {
+      if (cur) { const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        r.setAttribute('x', chX(start)); r.setAttribute('width', chX(hr) - chX(start)); r.setAttribute('y', 8); r.setAttribute('height', 88); r.setAttribute('rx', 4);
+        r.setAttribute('fill', cur === 'sell' ? '#3b6cff' : '#16a34a'); r.setAttribute('fill-opacity', 0.14); zg.appendChild(r); }
+      cur = m; start = hr;
+    }
+  }
+}
+const ui = { clock: document.getElementById('ai-clock'), mode: document.getElementById('ai-mode'), why: document.getElementById('ai-why'), price: document.getElementById('ai-price'), rev: document.getElementById('ai-rev'), dot: chart.querySelector('.dot'), cursor: chart.querySelector('.cursor') };
+let soc = 0.35, rev = 0, lastHr = 0;
+const MODES = {
+  charge: { t: 'Charging', why: 'Low price — AI stores solar energy', c: '#16a34a' },
+  sell:   { t: 'Selling', why: 'Peak price — AI discharges batteries to the grid', c: '#3b6cff' },
+  hold:   { t: 'Waiting', why: 'AI is waiting for a better price', c: '#8b8f96' },
+};
+function simulate(t, dt) {
+  const hr = (t % DAY) / DAY * 24; if (hr < lastHr) rev = 0; lastHr = hr;
+  const p = price(hr), pv = solar(hr), dh = dt / DAY * 24;
+  let mode = 'hold', batP = 0;
+  if (p >= sellT && soc > 0.08) { mode = 'sell'; batP = -Math.min(PMAX, soc * CAP / Math.max(dh, 1e-3)); }
+  else if (p <= sellT && pv > 0.05 && soc < 0.98) { mode = 'charge'; batP = Math.min(pv, PMAX); }
+  else if (p <= buyT && soc < 0.98) { mode = 'hold'; }
+  soc = Math.min(1, Math.max(0, soc + batP * dh / CAP));
+  const pvToGrid = Math.max(0, pv - Math.max(0, batP)), batToGrid = Math.max(0, -batP), gridP = pvToGrid + batToGrid;
+  rev += gridP * p * dh * 1000;
+  FLOW.cable_solar_trunk.on = pv > 0.05 ? 1 : 0;
+  FLOW.cable_solar_battery.on = mode === 'charge' ? 1 : 0;
+  FLOW.cable_battery_grid.on = mode === 'sell' ? 1 : 0;
+  FLOW.cable_solar_grid.on = pvToGrid > 0.05 ? 1 : 0;
+  socMat.forEach((m, i) => { const lit = soc > i / 4 + 0.05; m.color.setHex(lit ? 0x22c55e : 0x8d9299); m.emissiveIntensity = lit ? 0.6 : 0; });
+  const fmt = n => n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  L.pv.v.textContent = fmt(pv * 1000); L.grid.v.textContent = fmt(gridP * 1000);
+  L.bat.v.textContent = Math.round(soc * 100); L.bat.u.textContent = '% · ' + (soc * CAP).toFixed(1) + ' MWh';
+  const M_ = MODES[mode]; L.ai.t.textContent = M_.t; L.ai.t.style.color = M_.c;
+  ui.clock.textContent = String(Math.floor(hr)).padStart(2, '0') + ':' + String(Math.floor((hr % 1) * 60)).padStart(2, '0');
+  ui.mode.textContent = M_.t; ui.mode.style.background = M_.c; ui.why.textContent = M_.why;
+  ui.price.textContent = '€' + p.toFixed(3) + '/kWh'; ui.rev.textContent = '€' + fmt(rev);
+  ui.dot.setAttribute('cx', chX(hr)); ui.dot.setAttribute('cy', cy(p)); ui.dot.setAttribute('fill', M_.c);
+  ui.cursor.setAttribute('x1', chX(hr)); ui.cursor.setAttribute('x2', chX(hr));
+  aiMat.emissiveIntensity = mode === 'hold' ? 0.5 : 1.1;
+  return mode;
+}
+let lastT = 0;
+function placeLabels() {
+  const cam = stage._camera; if (!cam) return;
+  const r = stage.getBoundingClientRect();
+  labelDefs.forEach(d => {
+    const p = d.at.clone().project(cam);
+    const vis = p.z < 1 && p.z > -1;
+    d.el.style.display = vis ? '' : 'none';
+    d.el.style.transform = `translate(${r.left + (p.x + 1) / 2 * r.width}px, ${r.top + (1 - p.y) / 2 * r.height}px)`;
+  });
+}
+const clock = new THREE.Clock();
+(function tick() {
+  const t = clock.getElapsedTime(), dt = Math.min(0.1, t - lastT); lastT = t;
+  const mode = simulate(t, dt);
+  aiRing.rotation.y = t * 1.5; aiRing.rotation.x = Math.sin(t) * 0.4;
+  waves.forEach(w => { const u = (w.off + t * 0.5) % 1; w.m.position.set(aiPos.x, 0.6, aiPos.z); w.m.scale.setScalar(1 + u * 14); w.m.material.opacity = (1 - u) * (mode === 'hold' ? 0.25 : 0.7); });
+  flows.forEach(f => { f.amt += (f.on - f.amt) * Math.min(1, dt * 4); });
+  flows.forEach(f => f.dashes.forEach(p => {
+    const u = (p.off + t * 8 / f.len) % 1;
+    const pos = f.curve.getPointAt(u), tan = f.curve.getTangentAt(u);
+    p.m.position.set(pos.x, 0.52, pos.z);
+    p.m.quaternion.setFromUnitVectors(UP, tan.normalize());
+    const fade = Math.min(1, u * 12, (1 - u) * 12) * f.amt; p.m.visible = fade > 0.02; p.m.scale.set(fade, fade, fade);
+  }));
+  fans.forEach(fn => fn.rotation.x = t * 6);
+  mat.green.emissiveIntensity = 0.45 + 0.35 * (0.5 + 0.5 * Math.sin(t * 3));
+  placeLabels();
+  requestAnimationFrame(tick);
+})();
+</script>
+
+
+</body></html>

@@ -1,0 +1,827 @@
+<title>Battery Dispatcher</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --ink:#1b1d21; --muted:#6b7078; --grey:#8b8f96; --blue:#3b6cff; --blue-soft:#e9efff; --green:#16a34a; --green-soft:#e6f6ec;
+  --bg:#ffffff; --bg2:#f4f7fb; --line:rgba(20,30,50,.08); --card:#ffffff; --shadow:0 8px 30px rgba(30,50,90,.08);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,-apple-system,"SF Pro Display","Segoe UI",Helvetica,Arial,sans-serif;padding-inline:16px;line-height:1.5}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.wrap{max-width:1180px;margin:0 auto}
+a{color:inherit}
+h1,h2,h3{margin:0;letter-spacing:-.02em;text-wrap:balance}
+h2{font-size:clamp(28px,3.4vw,42px);line-height:1.1;font-weight:700;max-width:22ch}
+p{margin:0}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);margin-bottom:12px}
+.sub{color:var(--muted);font-size:17px;max-width:60ch;margin-top:14px}
+.btn{font:inherit;font-weight:600;font-size:15px;padding:12px 18px;border-radius:10px;border:0;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;line-height:1.2}
+.btn.pri{background:var(--blue);color:#fff}
+.btn.pri:hover{background:#2f5be6}
+.btn.soft{background:var(--blue-soft);color:var(--blue)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+
+/* hero: the 3D scene fills the first screen; text sits on it as a card */
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px;color:var(--ink)}
+.brand svg{width:24px;height:24px}
+.hero{margin-inline:-16px;display:grid;grid-template-columns:380px 1fr;grid-template-rows:1fr auto;grid-template-areas:"card stage" "panel stage";min-height:100vh;min-height:100svh;background:var(--bg)}
+.hero-card{grid-area:card;align-self:start;padding:28px 24px 12px 28px}
+.stage-wrap{grid-area:stage;position:relative;overflow:hidden;border-left:1px solid var(--line);background:linear-gradient(180deg,#cfe3f7 0%,#e9f2fb 45%,#ffffff 100%)}
+three-d-stage{position:absolute;inset:0;display:block;width:100%;height:100%}
+three-d-stage:not(:defined){visibility:hidden}
+h1{font-size:clamp(30px,3vw,42px);line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:16px 0 12px}
+.lead{font-size:16px;color:var(--muted);max-width:44ch;margin-bottom:18px}
+.btns{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start}
+.btn{flex:0 0 auto;height:auto}
+.facts{margin-top:16px;font-size:13px;color:var(--grey)}
+.facts b{color:var(--ink);font-weight:600}
+#labels{position:absolute;left:0;right:0;top:0;height:100%;z-index:2;pointer-events:none}
+.lbl{position:absolute;left:0;top:0;will-change:transform}
+.lbl .line{position:absolute;left:0;bottom:0;width:1px;background:#8b8f96}
+.lbl .txt{position:absolute;left:14px;white-space:nowrap;transform:translateY(-100%)}
+.lbl .val{font-size:30px;font-weight:600;color:#1b1d21;letter-spacing:-.5px;line-height:1.1}
+.lbl .val small{font-size:20px;font-weight:400;color:#8b8f96;margin-left:4px}
+.lbl .ttl{font-size:20px;color:#8b8f96;margin-top:2px}
+#ai-panel{grid-area:panel;align-self:end;margin:12px 24px 24px 28px;padding:14px 14px 10px;background:var(--card);border:1px solid var(--line);border-radius:16px;color:var(--ink);box-shadow:var(--shadow)}
+.p-head{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:15px;font-weight:600}
+#ai-clock{font-variant-numeric:tabular-nums;color:var(--grey);font-weight:500}
+.p-row{display:flex;align-items:center;gap:10px;margin-top:12px}
+.pill{padding:4px 10px;border-radius:999px;color:#fff;font-size:13px;font-weight:600;background:var(--grey);white-space:nowrap}
+#ai-price,#d-price{white-space:nowrap;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+#ai-why{font-size:13px;color:var(--muted);margin-top:8px;min-height:18px;text-wrap:pretty}
+#ai-chart{width:100%;height:80px;margin-top:10px;display:block}
+.legend{display:flex;gap:14px;margin-top:6px;font-size:12px;color:var(--muted);white-space:nowrap}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.legend .r{margin-left:auto}
+.p-rev{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);white-space:nowrap}
+.p-rev b{color:var(--ink);font-variant-numeric:tabular-nums}
+@media (max-width:860px){
+  .hero{grid-template-columns:1fr;grid-template-rows:auto auto auto;grid-template-areas:"card" "stage" "panel";min-height:0}
+  .hero-card{padding:22px 16px 18px}
+  .stage-wrap{height:62vh;height:62svh;min-height:360px;border-left:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .lbl .val{font-size:20px}.lbl .val small{font-size:14px}.lbl .ttl{font-size:14px}
+  #ai-panel{margin:16px 16px 20px}
+}
+
+/* sections */
+.sec{padding-block:72px}
+.sec.alt{background:var(--bg2);margin-inline:-16px;padding-inline:16px}
+.two{display:grid;grid-template-columns:1fr 1.2fr;gap:40px;align-items:center}
+@media (max-width:860px){.two{grid-template-columns:1fr;gap:28px}.sec{padding-block:56px}}
+.chart-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 18px 12px;box-shadow:var(--shadow)}
+.chart-card svg{width:100%;height:auto;display:block}
+.chart-card .cap{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-top:8px;gap:10px;flex-wrap:wrap}
+.pcurve{fill:none;stroke:#1b1d21;stroke-width:2}
+.zlabel{font-size:12px;font-weight:700}
+.axis{font-size:11px;fill:#8b8f96}
+
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:36px;counter-reset:step}
+.step{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;position:relative}
+.step .n{width:34px;height:34px;border-radius:10px;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center;font-weight:800;font-size:14px;margin-bottom:14px}
+.step h3{font-size:17px;font-weight:700;margin-bottom:6px}
+.step p{font-size:14.5px;color:var(--muted)}
+.step:not(:last-child)::after{content:"";position:absolute;right:-12px;top:50%;width:8px;height:8px;border-right:2px solid #c4c8ce;border-bottom:2px solid #c4c8ce;transform:translateY(-50%) rotate(-45deg)}
+@media (max-width:900px){.steps{grid-template-columns:repeat(2,1fr)}.step::after{display:none}}
+@media (max-width:520px){.steps{grid-template-columns:1fr}}
+
+/* live dashboard */
+.dash{margin-top:32px;background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+.dash-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);font-size:14px;flex-wrap:wrap}
+.dash-site{font-weight:600}
+.dash-live{display:flex;align-items:center;gap:8px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dash-live i{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px var(--green-soft)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)}
+.kpi{padding:16px 20px;border-right:1px solid var(--line)}
+.kpi:last-child{border-right:0}
+.kpi span{display:block;font-size:12.5px;color:var(--muted);margin-bottom:4px}
+.kpi b{font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.dash-body{display:grid;grid-template-columns:1.5fr 1fr;gap:0}
+.dash-chart{padding:18px 20px 12px;border-right:1px solid var(--line)}
+.dash-chart svg{width:100%;height:auto;display:block}
+.why-box{padding:20px}
+.why-box h4{margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--grey)}
+.why-box p{font-size:15px;margin-top:10px}
+.why-box .note{font-size:13px;color:var(--muted);margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
+@media (max-width:860px){.kpis{grid-template-columns:repeat(2,1fr)}.kpi:nth-child(2){border-right:0}.kpi:nth-child(-n+2){border-bottom:1px solid var(--line)}.dash-body{grid-template-columns:1fr}.dash-chart{border-right:0;border-bottom:1px solid var(--line)}}
+
+/* chat */
+.chat{max-width:680px;margin-top:32px;display:grid;gap:12px}
+.msg{padding:14px 18px;border-radius:18px;font-size:15.5px;max-width:86%}
+.msg.user{justify-self:end;background:var(--blue);color:#fff;border-bottom-right-radius:6px}
+.msg.ai{justify-self:start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:6px;box-shadow:var(--shadow)}
+.msg.ai b{color:var(--blue)}
+.msg .who{display:block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.chat-note{margin-top:18px;font-size:14px;color:var(--muted)}
+
+/* equipment */
+.logos{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+.logo{padding:12px 20px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-weight:800;font-size:17px;letter-spacing:-.01em;color:var(--ink)}
+.proto{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;font-size:13px;color:var(--muted)}
+.proto span{padding:5px 10px;border-radius:999px;background:var(--bg2);border:1px solid var(--line)}
+.fine{font-size:12.5px;color:var(--grey);margin-top:14px}
+
+/* results */
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:36px}
+.num{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px 24px;box-shadow:var(--shadow)}
+.num b{display:block;font-size:56px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--blue)}
+.num b.g{color:var(--green)}
+.num span{display:block;margin-top:10px;font-size:15px;color:var(--muted)}
+@media (max-width:760px){.nums{grid-template-columns:1fr}.num b{font-size:46px}}
+
+/* turnkey */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:36px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 20px}
+.tile svg{width:28px;height:28px;color:var(--green);margin-bottom:12px}
+.tile h3{font-size:17px;margin-bottom:6px}
+.tile p{font-size:14.5px;color:var(--muted)}
+@media (max-width:900px){.tiles{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:520px){.tiles{grid-template-columns:1fr}}
+
+/* contact */
+.contact{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+@media (max-width:860px){.contact{grid-template-columns:1fr}}
+form{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:var(--shadow);display:grid;gap:14px}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:520px){.f2{grid-template-columns:1fr}}
+label{display:grid;gap:6px;font-size:13px;font-weight:600;color:var(--muted)}
+input{font:inherit;font-size:15px;padding:11px 12px;border:1px solid #d5dbe3;border-radius:10px;background:#fff;color:var(--ink);width:100%}
+input:focus{border-color:var(--blue)}
+.thanks{display:grid;gap:8px;padding:8px 0}
+.thanks b{font-size:20px}
+.cinfo{margin-top:20px;font-size:15px;color:var(--muted);display:grid;gap:6px}
+.cinfo b{color:var(--ink);font-weight:600;user-select:all}
+footer{padding-block:28px 40px;border-top:1px solid var(--line);font-size:13px;color:var(--grey);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.reveal{transform:translateY(14px);transition:transform .6s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{transform:none;transition:none}}
+</style>
+
+<section class="hero" id="top">
+  <div class="hero-card">
+    <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4" transform="rotate(45 12 12)" fill="#3b6cff"/><path d="M13.2 7 9.6 12.6h2.6L10.8 17l3.6-5.6h-2.6z" fill="#fff"/></svg>Your Brand</div>
+    <h1>Your battery can earn more.</h1>
+    <p class="lead">An AI dispatcher that charges your batteries when electricity is cheap and sells to the grid when it's expensive. Automatically, 24/7.</p>
+    <div class="btns">
+      <a class="btn pri" href="#how">See how it works</a>
+      <a class="btn soft" href="#contact">Get a demo</a>
+    </div>
+    <p class="facts">Example site: <b>1 MWp solar · 2.4 MWh batteries · 1.2 MW inverter</b>. One day plays in 36 seconds.</p>
+  </div>
+  <div class="stage-wrap" id="scene">
+    <three-d-stage name="energy-site" background="linear-gradient(180deg, #cfe3f7 0%, #e9f2fb 45%, #ffffff 100%)"></three-d-stage>
+    <div id="labels"></div>
+  </div>
+  <div id="ai-panel">
+      <div class="p-head"><div>AI battery dispatcher</div><div id="ai-clock">00:00</div></div>
+      <div class="p-row"><div id="ai-mode" class="pill">Waiting</div><div id="ai-price">—</div></div>
+      <div id="ai-why">—</div>
+      <svg id="ai-chart" viewBox="0 0 320 110" aria-hidden="true">
+        <g class="zones"></g>
+        <path class="curve" fill="none" stroke="#1b1d21" stroke-width="1.6"></path>
+        <line class="cursor" y1="10" y2="96" stroke="#c4c8ce" stroke-width="1"></line>
+        <circle class="dot" r="4.5" fill="#8b8f96"></circle>
+        <text x="8" y="108" font-size="10" fill="#8b8f96">00</text><text x="160" y="108" font-size="10" fill="#8b8f96" text-anchor="middle">12</text><text x="312" y="108" font-size="10" fill="#8b8f96" text-anchor="end">24</text>
+      </svg>
+      <div class="legend"><span><i style="background:#16a34a"></i>AI charges</span><span><i style="background:#3b6cff"></i>AI sells</span><span class="r">electricity price</span></div>
+      <div class="p-rev"><span>Today's revenue</span><span><b id="ai-rev">€0</b></span></div>
+  </div>
+</section>
+
+<section class="sec" id="problem">
+  <div class="wrap two">
+    <div class="reveal">
+      <p class="eyebrow">Why it matters</p>
+      <h2>Electricity has two prices a day.</h2>
+      <p class="sub">At noon, when every solar plant exports at once, a kilowatt-hour costs about <b>€0.035</b>. In the evening it climbs to <b>€0.17</b> — almost five times more. A battery that only covers your own consumption misses that difference every single day.</p>
+    </div>
+    <div class="chart-card reveal">
+      <svg id="price-chart" viewBox="0 0 720 260" role="img" aria-label="Electricity price over one day with charging and selling windows">
+        <g class="zones"></g>
+        <path class="curve pcurve"></path>
+        <g class="zl"></g>
+        <text class="axis" x="8" y="250">00:00</text><text class="axis" x="188" y="250" text-anchor="middle">06:00</text><text class="axis" x="364" y="250" text-anchor="middle">12:00</text><text class="axis" x="540" y="250" text-anchor="middle">18:00</text><text class="axis" x="712" y="250" text-anchor="end">24:00</text>
+      </svg>
+      <div class="cap"><span><b style="color:#16a34a">Green</b> — the dispatcher charges from solar</span><span><b style="color:#3b6cff">Blue</b> — it sells to the grid</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec alt" id="how">
+  <div class="wrap">
+    <p class="eyebrow">How it works</p>
+    <h2>Four things, every 15 minutes.</h2>
+    <div class="steps reveal">
+      <div class="step"><div class="n">1</div><h3>Reads your site</h3><p>Inverters, batteries and the grid meter — live, every few seconds, over Modbus or the vendor's API.</p></div>
+      <div class="step"><div class="n">2</div><h3>Watches the market</h3><p>Day-ahead and intraday prices, plus the weather forecast for tomorrow's solar production.</p></div>
+      <div class="step"><div class="n">3</div><h3>Plans the day</h3><p>When to charge, when to hold, when to sell — within the reserve, cycle and export limits you set.</p></div>
+      <div class="step"><div class="n">4</div><h3>Acts on site</h3><p>Sends the setpoints to your inverters and writes down every command with its reason.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="live">
+  <div class="wrap">
+    <p class="eyebrow">See it live</p>
+    <h2>One screen shows what the battery is doing — and why.</h2>
+    <p class="sub">The numbers below follow the same day as the scene above.</p>
+    <div class="dash reveal">
+      <div class="dash-head"><span class="dash-site">Kolín — Farma Jih · 1 MWp solar · 2.4 MWh storage</span><span class="dash-live"><i></i>live · <time id="d-clock">00:00</time></span></div>
+      <div class="kpis">
+        <div class="kpi"><span>Revenue today</span><b id="d-rev">€0</b></div>
+        <div class="kpi"><span>Batteries</span><b id="d-soc">0 %</b></div>
+        <div class="kpi"><span>Grid export</span><b id="d-grid">0 kW</b></div>
+        <div class="kpi"><span>Price now</span><b id="d-price">—</b></div>
+      </div>
+      <div class="dash-body">
+        <div class="dash-chart">
+          <svg id="dash-chart" viewBox="0 0 640 200" aria-hidden="true">
+            <g class="zones"></g>
+            <path class="curve" fill="none" stroke="#1b1d21" stroke-width="1.8"></path>
+            <line class="cursor" y1="16" y2="172" stroke="#c4c8ce" stroke-width="1"></line>
+            <circle class="dot" r="5" fill="#8b8f96"></circle>
+            <text class="axis" x="8" y="192">00</text><text class="axis" x="320" y="192" text-anchor="middle">12</text><text class="axis" x="632" y="192" text-anchor="end">24</text>
+          </svg>
+          <div class="legend"><span><i style="background:#16a34a"></i>charging</span><span><i style="background:#3b6cff"></i>selling</span><span class="r">price, €/kWh</span></div>
+        </div>
+        <aside class="why-box">
+          <h4>Right now</h4>
+          <span id="d-mode" class="pill">Waiting</span>
+          <p id="d-why">—</p>
+          <p class="note">Every decision is written down with the time, the price and the reason. You can take over at any moment.</p>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec alt" id="ai">
+  <div class="wrap">
+    <p class="eyebrow">Ask it anything</p>
+    <h2>Every decision is explained in plain words.</h2>
+    <div class="chat reveal">
+      <div class="msg user"><span class="who">Owner</span>Why did we stop selling at half past nine this morning?</div>
+      <div class="msg ai"><span class="who">AI dispatcher</span>At 09:30 the price fell below <b>€0.12/kWh</b> and the sun was coming up. From that point, storing free solar beats selling it. We sold again from about 17:45, at up to <b>€0.17/kWh</b> — the best price of the day.</div>
+      <div class="msg user"><span class="who">Owner</span>What if I keep a 20 % reserve for the night?</div>
+      <div class="msg ai"><span class="who">AI dispatcher</span>Simulated over the last 30 days: about <b>−€2 per day</b>, and the reserve would carry the site through a two-hour outage. Nothing was changed on the equipment — say "apply" and I'll set it.</div>
+    </div>
+    <p class="chat-note">The AI explains and simulates. Limits are yours: reserve, cycles per day, export cap. It never goes beyond them.</p>
+  </div>
+</section>
+
+<section class="sec" id="equipment">
+  <div class="wrap">
+    <p class="eyebrow">Works with your equipment</p>
+    <h2>No new hardware. It connects to what you already have.</h2>
+    <div class="logos reveal">
+      <span class="logo">Huawei</span><span class="logo">SolarEdge</span><span class="logo">Victron</span><span class="logo">Sungrow</span><span class="logo">GoodWe</span><span class="logo">Deye</span><span class="logo">Fronius</span><span class="logo">SMA</span>
+    </div>
+    <div class="proto"><span>Modbus TCP / RTU</span><span>SunSpec</span><span>MQTT</span><span>Vendor cloud APIs</span><span>Grid meters</span></div>
+    <p class="fine">Brand names shown as text. Other inverters and battery systems on request.</p>
+  </div>
+</section>
+
+<section class="sec alt" id="results">
+  <div class="wrap">
+    <p class="eyebrow">The result</p>
+    <h2>More money from the same battery.</h2>
+    <div class="nums reveal">
+      <div class="num"><b>+22 %</b><span>more revenue than the same site selling solar as it comes</span></div>
+      <div class="num"><b class="g">5×</b><span>the price difference between noon and the evening peak, used every day</span></div>
+      <div class="num"><b>24/7</b><span>automatic — the dispatcher plans, acts and reports without anyone on shift</span></div>
+    </div>
+    <p class="fine">Example for a typical Czech summer month. Real numbers depend on the site, the tariff and the battery.</p>
+  </div>
+</section>
+
+<section class="sec" id="turnkey">
+  <div class="wrap">
+    <p class="eyebrow">Turnkey</p>
+    <h2>Yours, not rented.</h2>
+    <p class="sub">We connect your equipment, set the system up and support it. You pay once — the revenue stays with you.</p>
+    <div class="tiles reveal">
+      <div class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg><h3>Your brand</h3><p>The app carries your name and colours. Your clients see you, not us.</p></div>
+      <div class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.01M7 17h.01"/></svg><h3>Your servers</h3><p>Runs on your infrastructure or a hosting of your choice. Your data stays with you.</p></div>
+      <div class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M14 4l-4 16"/></svg><h3>Your source code</h3><p>Delivered with the code and documentation. No vendor lock-in.</p></div>
+      <div class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9.5a3 3 0 0 0-3-1.5c-1.7 0-3 .9-3 2s1.3 2 3 2 3 .9 3 2-1.3 2-3 2a3 3 0 0 1-3-1.5M12 6v2M12 16v2"/></svg><h3>No % from your revenue</h3><p>One price for the project and an optional support plan. Aggregators take a share every month — we don't.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec alt" id="contact">
+  <div class="wrap contact">
+    <div>
+      <p class="eyebrow">Get a demo</p>
+      <h2>Let's calculate what your battery can earn.</h2>
+      <p class="sub">Tell us the size of the plant and the storage. We'll come back with an estimate for your site and a live walk-through of the system.</p>
+      <div class="cinfo">
+        <span>Phone · <b>+420 000 000 000</b></span>
+        <span>Email · <b>hello@yourbrand.cz</b></span>
+        <span>Prague · Czech Republic</span>
+      </div>
+    </div>
+    <form id="leadForm" novalidate>
+      <div class="f2">
+        <label>Name<input id="f-name" name="name" type="text" autocomplete="name" required></label>
+        <label>Company<input id="f-company" name="company" type="text" autocomplete="organization"></label>
+      </div>
+      <label>Email or phone<input id="f-contact" name="contact" type="text" autocomplete="email" required></label>
+      <div class="f2">
+        <label>Solar plant, kWp<input id="f-pv" name="pv" type="number" min="0" inputmode="numeric" placeholder="1000"></label>
+        <label>Battery, kWh<input id="f-bat" name="bat" type="number" min="0" inputmode="numeric" placeholder="2400"></label>
+      </div>
+      <button class="btn pri" type="submit" id="f-submit">Get a free estimate</button>
+      <div class="thanks" id="thanks" hidden><b>Thanks — we'll get back within one working day.</b><span style="color:var(--muted)">Prototype: nothing was sent. In the real site this goes to your inbox.</span></div>
+    </form>
+  </div>
+</section>
+
+<footer class="wrap">
+  <span>© 2026 Your Brand · Prototype with fictional data</span>
+  <span>Solar + storage dispatch software, delivered turnkey</span>
+</footer>
+
+<script>
+/* <three-d-stage> — trimmed from the mockup's starter: renderer, studio lighting, ground shadow,
+   camera auto-framed to the object, rotate-only orbit (no zoom, so the page keeps scrolling). */
+(() => {
+  const css = `
+    :host{position:relative;display:block;width:100%;height:100vh;background:var(--stage-bg,#f0eee6);overflow:hidden}
+    canvas{display:block;outline:none}
+    .err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:24px;font:500 14px/1.6 Inter,system-ui,sans-serif;color:#6b7078;text-align:center;white-space:pre-line}`;
+  const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js';
+  class ThreeDStage extends HTMLElement {
+    constructor(){
+      super();
+      const root = this.attachShadow({ mode: 'open' });
+      const style = document.createElement('style'); style.textContent = css; root.appendChild(style);
+      this._err = document.createElement('div'); this._err.className = 'err'; root.appendChild(this._err);
+      this.ready = new Promise((resolve, reject) => { this._readyResolve = resolve; this._readyReject = reject; });
+    }
+    connectedCallback(){
+      if (this._booted) { if (this._renderer) { this._renderer.setAnimationLoop(this._loop); this._ro && this._ro.observe(this); } return; }
+      this._booted = true;
+      this._boot().catch(err => {
+        this._err.style.display = 'flex';
+        this._err.textContent = 'The 3D scene could not load. Check the internet connection and reload the page.\n' + String(err && err.message ? err.message : err);
+        this._readyReject(err);
+      });
+    }
+    async _boot(){
+      const bg = this.getAttribute('background'); if (bg) this.style.setProperty('--stage-bg', bg);
+      const THREE = await import(THREE_URL); this._THREE = THREE;
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      this._renderer = renderer; this.shadowRoot.insertBefore(renderer.domElement, this._err);
+      const scene = new THREE.Scene(); this._scene = scene;
+      const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 500); camera.position.set(3, 2.2, 4); this._camera = camera;
+      this._orbit = { theta: 0.675, phi: 1.24, dist: 10, target: new THREE.Vector3(), vTheta: 0, auto: this.hasAttribute('autorotate'), ready: false };
+      if (this.hasAttribute('interactive')) this._bindPointer(renderer.domElement); // static view by default: no orbit, no auto-rotate
+      scene.add(new THREE.HemisphereLight(0xffffff, 0xd8d2c4, 1.0));
+      const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(4, 7, 5); key.castShadow = true;
+      key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0002; this._key = key; scene.add(key);
+      const fill = new THREE.DirectionalLight(0xfff4e6, 0.5); fill.position.set(-5, 3, -4); scene.add(fill);
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.ShadowMaterial({ opacity: 0.18 }));
+      ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; this._ground = ground; scene.add(ground);
+      const fit = () => { const w = this.clientWidth || 1, h = this.clientHeight || 1; renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); };
+      fit(); this._ro = new ResizeObserver(fit);
+      this._loop = () => { this._updateCamera(); renderer.render(scene, camera); };
+      if (this.isConnected) { this._ro.observe(this); renderer.setAnimationLoop(this._loop); }
+      this._readyResolve({ THREE });
+    }
+    _bindPointer(el){
+      let drag = null;
+      el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' && e.button !== 0) return; drag = { x: e.clientX, y: e.clientY }; this._orbit.auto = false; this._dragging = true; try { el.setPointerCapture(e.pointerId); } catch (err) {} });
+      el.addEventListener('pointermove', e => {
+        if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag = { x: e.clientX, y: e.clientY };
+        const o = this._orbit; o.vTheta = -dx * 0.005; o.theta += o.vTheta; o.phi = Math.min(1.45, Math.max(0.35, o.phi - dy * 0.004));
+      });
+      const up = () => { drag = null; this._dragging = false; };
+      el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
+    }
+    _updateCamera(){
+      const o = this._orbit; if (!o.ready) return;
+      if (o.auto) o.theta += 0.0012;
+      else if (!this._dragging) { o.theta += o.vTheta; o.vTheta *= 0.9; if (Math.abs(o.vTheta) < 1e-4) o.vTheta = 0; }
+      const sp = Math.sin(o.phi);
+      this._camera.position.set(o.target.x + o.dist * sp * Math.sin(o.theta), o.target.y + o.dist * Math.cos(o.phi), o.target.z + o.dist * sp * Math.cos(o.theta));
+      this._camera.lookAt(o.target);
+    }
+    setObject(object){
+      const THREE = this._THREE; if (!THREE) throw new Error('three-d-stage: not ready — await stage.ready first');
+      if (this._object) this._scene.remove(this._object);
+      this._object = object;
+      object.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      const box = new THREE.Box3().setFromObject(object);
+      if (!box.isEmpty()) {
+        this._ground.position.y = box.min.y;
+        const sphere = box.getBoundingSphere(new THREE.Sphere());
+        const dist = (sphere.radius / Math.tan((this._camera.fov * Math.PI) / 360)) * 0.8;
+        const o = this._orbit; o.target.copy(sphere.center); o.dist = dist; o.ready = true;
+        this._camera.near = Math.max(dist / 100, 0.01); this._camera.far = dist * 100; this._camera.updateProjectionMatrix();
+        this._updateCamera();
+        const span = sphere.radius * 1.05, kdir = new THREE.Vector3(4, 7, 5).normalize();
+        this._key.position.copy(sphere.center).addScaledVector(kdir, sphere.radius * 2);
+        this._key.target.position.copy(sphere.center); if (!this._key.target.parent) this._scene.add(this._key.target);
+        const sh = this._key.shadow; sh.camera.near = sphere.radius * 0.5; sh.camera.far = sphere.radius * 3.5; sh.mapSize.set(4096, 4096);
+        sh.map?.dispose(); sh.map = null; sh.bias = -0.0005; sh.normalBias = sphere.radius * 0.002;
+        sh.camera.left = -span; sh.camera.right = span; sh.camera.top = span; sh.camera.bottom = -span; sh.camera.updateProjectionMatrix();
+      }
+      this._scene.add(object);
+    }
+  }
+  customElements.define('three-d-stage', ThreeDStage);
+})();
+</script>
+<script type="module">
+/* ===== The mockup's scene, unchanged except: labels are placed inside the stage box,
+   the day chart is drawn on three SVGs, and the live dashboard mirrors the panel. ===== */
+const stage = document.querySelector('three-d-stage');
+const { THREE } = await stage.ready;
+const root = new THREE.Group(); root.name = 'energy_site';
+
+const M = (name, color, rough = 0.7, metal = 0, extra = {}) =>
+  Object.assign(new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal, ...extra }), { name });
+const mat = {
+  ground:   M('ground', 0xf3f4f6, 0.95),
+  concrete: M('concrete', 0xd9dce0, 0.85),
+  cladding: M('cladding_dark', 0x4a4e55, 0.6, 0.2),
+  roof:     M('roof', 0x9a9ea5, 0.8),
+  steel:    M('steel_dark', 0x3a3d42, 0.5, 0.35),
+  panel:    M('pv_cell', 0x2c3a52, 0.3, 0.3),
+  frame:    M('aluminium', 0xb8bcc2, 0.4, 0.35),
+  battery:  M('battery_shell', 0xf7f8f9, 0.5, 0.05),
+  vent:     M('vent_grey', 0x8d9299, 0.6, 0.2),
+  green:    M('accent_green', 0x22c55e, 0.4, 0, { emissive: 0x16a34a, emissiveIntensity: 0.6 }),
+  warm:     M('warm_light', 0xf3b76a, 0.5, 0, { emissive: 0xe89a4a, emissiveIntensity: 0.7 }),
+  cable:    M('cable', 0xbfc3c8, 0.8),
+};
+
+const add = (parent, name, geo, m, x = 0, y = 0, z = 0, cast = true) => {
+  const mesh = new THREE.Mesh(geo, m); mesh.name = name;
+  mesh.position.set(x, y, z); mesh.castShadow = cast; mesh.receiveShadow = true;
+  parent.add(mesh); return mesh;
+};
+const box = (p, n, w, h, d, m, x, y, z) => add(p, n, new THREE.BoxGeometry(w, h, d), m, x, y, z);
+const beam = (p, n, a, b, r, m) => {
+  const dir = new THREE.Vector3().subVectors(b, a), len = dir.length();
+  const mesh = add(p, n, new THREE.CylinderGeometry(r, r, len, 6), m);
+  mesh.position.copy(a).addScaledVector(dir, 0.5);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+  return mesh;
+};
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+
+const SPREAD = 1.4;
+
+// ---------- Building ----------
+const bld = new THREE.Group(); bld.name = 'building'; bld.position.set(0, 0, -22); root.add(bld);
+const BW = 34, BD = 20, BH = 13;
+box(bld, 'plinth', BW + 0.4, 3.2, BD + 0.4, mat.concrete, 0, 1.6, 0);
+box(bld, 'cladding', BW, BH - 3.2 - 0.002, BD, mat.cladding, 0, 3.2 + (BH - 3.2) / 2, 0);
+for (const [w, d, x, z] of [[BW + 0.3, 0.3, 0, BD / 2], [BW + 0.3, 0.3, 0, -BD / 2], [0.3, BD, BW / 2, 0], [0.3, BD, -BW / 2, 0]])
+  box(bld, 'parapet', w, 0.6, d, mat.cladding, x, BH + 0.3, z);
+box(bld, 'roof', BW - 0.4, 0.1, BD - 0.4, mat.roof, 0, BH + 0.06, 0);
+for (let i = 0; i < 34; i++) {
+  const x = -BW / 2 + 0.5 + i * (BW - 1) / 33;
+  box(bld, `rib_front_${i}`, 0.12, BH - 3.4, 0.12, mat.steel, x, 3.2 + (BH - 3.2) / 2, BD / 2 + 0.06);
+}
+for (let i = 0; i < 6; i++) box(bld, `window_${i}`, 1.6, 0.9, 0.05, mat.warm, -BW / 2 + 2 + i * 1.9, 9.5, BD / 2 + 0.14);
+box(bld, 'loading_bay', 7, 3, 0.2, mat.warm, 6, 1.5, BD / 2 + 0.12);
+box(bld, 'canopy', 8, 0.25, 2, mat.steel, 6, 3.3, BD / 2 + 1);
+
+// ---------- Pylons ----------
+function pylon(name, x, z) {
+  const g = new THREE.Group(); g.name = name; g.position.set(x, 0, z); root.add(g);
+  const H = 26, base = 3.2, top = 0.7;
+  const w = y => base + (top - base) * (y / H);
+  const corners = [[1, 1], [1, -1], [-1, -1], [-1, 1]];
+  corners.forEach(([sx, sz], i) => beam(g, `leg_${i}`, V(sx * base, 0, sz * base), V(sx * top, H, sz * top), 0.12, mat.steel));
+  const levels = 9;
+  for (let l = 0; l < levels; l++) {
+    const y0 = (l / levels) * H, y1 = ((l + 1) / levels) * H, a = w(y0), b = w(y1);
+    for (let f = 0; f < 4; f++) {
+      const [sx0, sz0] = corners[f], [sx1, sz1] = corners[(f + 1) % 4];
+      const p0 = V(sx0 * a, y0, sz0 * a), p1 = V(sx1 * a, y0, sz1 * a);
+      const q0 = V(sx0 * b, y1, sz0 * b), q1 = V(sx1 * b, y1, sz1 * b);
+      beam(g, `brace_${l}_${f}_a`, p0, q1, 0.05, mat.steel);
+      beam(g, `brace_${l}_${f}_b`, p1, q0, 0.05, mat.steel);
+      beam(g, `ring_${l}_${f}`, q0, q1, 0.06, mat.steel);
+    }
+  }
+  [[H * 0.62, 6], [H * 0.78, 5], [H * 0.92, 3.8]].forEach(([y, len], k) => {
+    const hw = w(y);
+    for (const s of [1, -1]) {
+      beam(g, `arm_${k}_${s}_top`, V(s * hw, y, hw), V(s * (hw + len), y, 0), 0.07, mat.steel);
+      beam(g, `arm_${k}_${s}_bot`, V(s * hw, y, -hw), V(s * (hw + len), y, 0), 0.07, mat.steel);
+      beam(g, `arm_${k}_${s}_low`, V(s * hw, y - 1.2, 0), V(s * (hw + len), y, 0), 0.06, mat.steel);
+      add(g, `insulator_${k}_${s}`, new THREE.CylinderGeometry(0.18, 0.18, 1.4, 12), mat.frame, s * (hw + len - 0.3), y - 0.7, 0);
+    }
+  });
+  beam(g, 'peak', V(0, H, 0), V(0, H + 2.5, 0), 0.08, mat.steel);
+  corners.forEach(([sx, sz], i) => box(g, `footing_${i}`, 1.2, 0.4, 1.2, mat.concrete, sx * base, 0.2, sz * base));
+  return g;
+}
+const pA = pylon('pylon_A', -46, -6); pA.rotation.y = Math.PI / 4;
+const pB = pylon('pylon_B', -36, 16); pB.rotation.y = Math.PI / 4;
+
+// ---------- Solar arrays ----------
+function solarRow(name, x, z) {
+  const g = new THREE.Group(); g.name = name; g.position.set(x, 0, z); g.rotation.y = -Math.PI / 14; g.scale.setScalar(1.0); root.add(g);
+  const cols = 14, rows = 4, pw = 1.9, ph = 1.1, tilt = THREE.MathUtils.degToRad(28);
+  const table = new THREE.Group(); table.name = 'table'; table.position.y = 3.0; table.rotation.x = tilt; g.add(table);
+  const W = cols * (pw + 0.04), D = rows * (ph + 0.04);
+  box(table, 'table_frame', W + 0.2, 0.08, D + 0.2, mat.frame, 0, -0.06, 0);
+  for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) {
+    box(table, `module_${c}_${r}`, pw, 0.05, ph, mat.panel, -W / 2 + (c + 0.5) * (pw + 0.04), 0.01, -D / 2 + (r + 0.5) * (ph + 0.04));
+  }
+  for (let i = 0; i < 5; i++) {
+    const px = -W / 2 + 1 + i * (W - 2) / 4;
+    const fz = Math.cos(tilt) * D / 2, fy = Math.sin(tilt) * D / 2;
+    beam(g, `post_front_${i}`, V(px, 0, fz - 0.2), V(px, 2.2 - fy + 0.1, fz - 0.2), 0.07, mat.frame);
+    beam(g, `post_back_${i}`, V(px, 0, -fz + 0.2), V(px, 2.2 + fy - 0.1, -fz + 0.2), 0.07, mat.frame);
+    beam(g, `strut_${i}`, V(px, 0, fz - 0.2), V(px, 2.2 + fy - 0.1, -fz + 0.2), 0.05, mat.frame);
+  }
+  return g;
+}
+const rows = [];
+for (let r = 0; r < 4; r++) rows[r] = solarRow(`solar_row_${r + 1}`, 34, 0 + r * 8);
+
+const socMat = [0, 1, 2, 3].map(i => M(`soc_led_${i}`, 0x22c55e, 0.4, 0, { emissive: 0x16a34a, emissiveIntensity: 0.6 }));
+// ---------- Battery storage ----------
+const bess = new THREE.Group(); bess.name = 'battery_storage'; bess.position.set(0, 0, 12); bess.rotation.y = -Math.PI / 14; root.add(bess);
+box(bess, 'bess_pad', 34, 0.3, 17, M('pad_dark', 0x9ea3aa, 0.9), 0, 0.15, 0);
+const UW = 8, UH = 3.2, UD = 3;
+for (let u = 0; u < 6; u++) {
+  const g = new THREE.Group(); g.name = `battery_unit_${u + 1}`; g.position.set(-11 + (u % 3) * 9.4, 0.3, u < 3 ? -3.8 : 3.8); bess.add(g);
+  box(g, 'shell', UW, UH, UD, mat.battery, 0, UH / 2, 0);
+  box(g, 'roof_cap', UW + 0.1, 0.12, UD + 0.1, mat.vent, 0, UH + 0.06, 0);
+  box(g, 'base_rail', UW + 0.05, 0.14, UD + 0.05, mat.steel, 0, 0.07, 0);
+  for (let d = 0; d < 4; d++) {
+    const dx = -UW / 2 + 1.0 + d * 2.0;
+    box(g, `door_${d}`, 1.9, UH - 0.5, 0.03, mat.battery, dx, UH / 2, UD / 2 + 0.016);
+    box(g, `door_seam_${d}`, 0.03, UH - 0.5, 0.04, mat.vent, dx + 0.98, UH / 2, UD / 2 + 0.01);
+    box(g, `handle_${d}`, 0.05, 0.35, 0.06, mat.steel, dx + 0.75, UH / 2, UD / 2 + 0.05);
+    for (let s = 0; s < 4; s++) box(g, `louvre_${d}_${s}`, 1.0, 0.04, 0.03, mat.vent, dx, 0.55 + s * 0.12, UD / 2 + 0.04);
+  }
+  box(g, 'status_bar', 1.2, 0.12, 0.03, mat.green, UW / 2 - 1.0, UH - 0.22, UD / 2 + 0.035);
+  box(g, 'hvac', 0.5, 1.2, 1.4, mat.vent, UW / 2 + 0.25, 1.4, 0);
+  add(g, 'hvac_fan', new THREE.CylinderGeometry(0.42, 0.42, 0.04, 32), mat.steel, UW / 2 + 0.52, 1.4, 0).rotation.z = Math.PI / 2;
+  for (let b = 0; b < 4; b++) box(g, `soc_${b}`, 0.03, 0.14, 0.4, socMat[b], -UW / 2 - 0.016, 1.0 + b * 0.2, 0);
+}
+const pcs = new THREE.Group(); pcs.name = 'inverter_pcs'; pcs.position.set(15, 0.3, 0); bess.add(pcs);
+box(pcs, 'pcs_body', 2.2, 2.2, 1.8, mat.vent, 0, 1.1, 0);
+box(pcs, 'pcs_panel', 1.6, 1.4, 0.03, mat.battery, 0, 1.2, 0.916);
+box(pcs, 'pcs_led', 0.4, 0.08, 0.03, mat.green, 0, 1.75, 0.94);
+const aiMat = M('ai_glow', 0x5b8cff, 0.35, 0, { emissive: 0x3b6cff, emissiveIntensity: 0.9 });
+const ai = new THREE.Group(); ai.name = 'ai_controller'; ai.position.set(15, 0.3, -4.5); bess.add(ai);
+box(ai, 'ai_body', 1.8, 2.6, 1.6, mat.steel, 0, 1.3, 0);
+box(ai, 'ai_screen', 1.2, 0.7, 0.03, aiMat, 0, 1.9, 0.816);
+for (let s = 0; s < 3; s++) box(ai, `ai_rack_${s}`, 1.3, 0.08, 0.03, mat.vent, 0, 0.6 + s * 0.3, 0.816);
+add(ai, 'ai_mast', new THREE.CylinderGeometry(0.06, 0.06, 2.2, 12), mat.frame, 0, 3.7, 0);
+const aiCore = add(ai, 'ai_core', new THREE.SphereGeometry(0.32, 32, 16), aiMat, 0, 4.9, 0);
+const aiRing = add(ai, 'ai_ring', new THREE.TorusGeometry(0.7, 0.05, 12, 64), aiMat, 0, 4.9, 0);
+const bolt = new THREE.Shape([[0.3, 1], [-0.35, -0.05], [0.02, -0.05], [-0.3, -1], [0.38, 0.12], [0.0, 0.12]].map(p => new THREE.Vector2(...p)));
+const boltMesh = add(bess, 'roof_emblem', new THREE.ExtrudeGeometry(bolt, { depth: 0.04, bevelEnabled: false }), mat.green, -1.6, 0.3 + UH + 0.13, 3.8);
+boltMesh.rotation.x = -Math.PI / 2;
+
+// ---------- Spread layout, then wire real connections ----------
+root.children.forEach(c => { if (c.isGroup) { c.position.x *= SPREAD; c.position.z *= SPREAD; } });
+root.updateMatrixWorld(true);
+const W = (obj, x, y, z) => obj.localToWorld(V(x, y, z));
+const net = new THREE.Group(); net.name = 'cables'; root.add(net);
+const flows = [];
+function terminal(name, p, h = 1.2) {
+  add(net, name + '_riser', new THREE.CylinderGeometry(0.2, 0.2, h, 12), mat.cable, p.x, h / 2, p.z);
+  box(net, name + '_junction', 0.9, 0.7, 0.9, mat.vent, p.x, h, p.z);
+}
+function orthoPath(pts, r = 4) {
+  const path = new THREE.CurvePath();
+  const P = pts.map(p => V(p.x, 0.18, p.z));
+  let cur = P[0];
+  for (let i = 1; i < P.length - 1; i++) {
+    const inD = P[i].clone().sub(P[i - 1]), outD = P[i + 1].clone().sub(P[i]);
+    const rr = Math.min(r, inD.length() / 2, outD.length() / 2);
+    const s = P[i].clone().addScaledVector(inD.normalize(), -rr), e = P[i].clone().addScaledVector(outD.normalize(), rr);
+    if (cur.distanceTo(s) > 1e-3) path.add(new THREE.LineCurve3(cur, s));
+    path.add(new THREE.QuadraticBezierCurve3(s, P[i].clone(), e));
+    cur = e;
+  }
+  path.add(new THREE.LineCurve3(cur, P[P.length - 1]));
+  return path;
+}
+function cable(name, pts, flow) {
+  const curve = orthoPath(pts);
+  const segs = Math.max(64, Math.round(curve.getLength() * 3));
+  add(net, name, new THREE.TubeGeometry(curve, segs, 0.28, 12, false), mat.cable, 0, 0, 0, false);
+  terminal(name + '_a', pts[0]); terminal(name + '_b', pts[pts.length - 1]);
+  if (flow) flows.push({ name, curve, mat: flow, len: curve.getLength(), on: 1, amt: 1 });
+}
+const pAfoot = W(pA, 0, 0, 0), pBfoot = W(pB, 0, 0, 0);
+const pcsOut = W(pcs, 1.8, -0.3, 0), bessBack = W(bess, -4, 0, -9.5);
+root.remove(bld);
+const comb = rows.map((g, r) => {
+  const p = W(g, -15.2, 0, 2.6);
+  box(net, `combiner_box_${r + 1}`, 1.0, 1.4, 0.5, mat.battery, p.x, 0.7, p.z);
+  return p;
+});
+const flowGreen = mat.green;
+const cx = comb[0].x, busZ = -6, loopZ = 52, midX = (cx + pcsOut.x) / 2;
+const P2 = (x, z) => V(x, 0, z);
+cable('cable_solar_trunk', [comb[3], comb[0]], flowGreen);
+cable('cable_solar_battery', [comb[0], P2(midX, comb[0].z), P2(midX, pcsOut.z), pcsOut], flowGreen);
+cable('cable_battery_grid', [bessBack, P2(bessBack.x, busZ), P2(pBfoot.x, busZ), pBfoot], flowGreen);
+cable('cable_solar_grid', [comb[3], P2(cx - 4, comb[3].z), P2(cx - 4, loopZ), P2(pBfoot.x, loopZ), pBfoot], flowGreen);
+
+const tipsA = [], tipsB = [];
+pA.traverse(o => o.name.startsWith('insulator_') && tipsA.push(o));
+pB.traverse(o => o.name.startsWith('insulator_') && tipsB.push(o));
+tipsA.forEach((ia, k) => {
+  const a = ia.localToWorld(V(0, -0.7, 0)), b = tipsB[k].localToWorld(V(0, -0.7, 0));
+  const mid = a.clone().lerp(b, 0.5); mid.y -= 2.2;
+  const c = new THREE.QuadraticBezierCurve3(a, mid, b);
+  add(net, `overhead_line_${k}`, new THREE.TubeGeometry(c, 48, 0.05, 6, false), mat.steel, 0, 0, 0, false);
+});
+
+stage.setObject(root);
+
+// ---------- Animation: energy pulses, fans, status LEDs ----------
+const fx = new THREE.Group(); fx.name = 'energy_flow_fx'; root.add(fx);
+const dashGeo = new THREE.CapsuleGeometry(0.2, 2.2, 6, 12);
+const UP = V(0, 1, 0);
+flows.forEach(f => {
+  f.dashes = [];
+  const n = Math.max(3, Math.round(f.len / 7));
+  for (let k = 0; k < n; k++) {
+    const m = new THREE.Mesh(dashGeo, f.mat); m.name = 'energy_dash'; m.castShadow = false;
+    fx.add(m); f.dashes.push({ m, off: k / n });
+  }
+});
+const waves = [0, 1, 2].map(k => {
+  const m = new THREE.Mesh(new THREE.TorusGeometry(1, 0.06, 8, 64), aiMat.clone()); m.name = 'ai_signal';
+  m.material.transparent = true; m.rotation.x = Math.PI / 2; fx.add(m); return { m, off: k / 3 };
+});
+const aiPos = aiCore.getWorldPosition(V());
+const FLOW = Object.fromEntries(flows.map(f => [f.name, f]));
+const fans = [];
+root.traverse(o => { if (o.name === 'hvac_fan') fans.push(o); });
+// ---------- Labels ----------
+const labelDefs = [
+  { id: 'grid', at: pB.localToWorld(V(0, 28.5, 0)), val: '0', unit: 'kW', ttl: 'Grid · export', rise: 90 },
+  { id: 'bat', at: W(bess, -4, 4, 0), val: '0', unit: '%', ttl: 'Batteries', rise: 150 },
+  { id: 'ai', at: aiPos.clone().add(V(0, 1.2, 0)), val: 'AI', unit: '', ttl: 'Waiting', rise: 60 },
+  { id: 'pv', at: W(rows[1], 0, 4, 0), val: '0', unit: 'kW', ttl: 'Solar plant', rise: 170 },
+];
+const layer = document.getElementById('labels');
+labelDefs.forEach(d => {
+  d.el = document.createElement('div'); d.el.className = 'lbl';
+  d.el.innerHTML = `<div class="line" style="height:${d.rise}px"></div><div class="txt" style="top:-${d.rise}px"><div class="val"><span class="v">${d.val}</span><small>${d.unit}</small></div><div class="ttl">${d.ttl}</div></div>`;
+  layer.appendChild(d.el);
+  d.v = d.el.querySelector('.v'); d.t = d.el.querySelector('.ttl'); d.u = d.el.querySelector('small');
+});
+const L = Object.fromEntries(labelDefs.map(d => [d.id, d]));
+L.ai.v.style.color = '#3b6cff';
+
+// ---------- AI dispatch simulation (24 h in 36 s) ----------
+const DAY = 36, CAP = 2.4, PMAX = 1.2;
+const price = hr => 0.022 * (3.2 + 3.4 * Math.exp(-((hr - 8.5) ** 2) / 3) + 4.6 * Math.exp(-((hr - 19.5) ** 2) / 4) - 1.6 * Math.exp(-((hr - 13) ** 2) / 8) - 0.8 * Math.exp(-((hr - 3) ** 2) / 6));
+const solar = hr => Math.max(0, Math.sin((hr - 6) / 13 * Math.PI)) * 1.023;
+const PTS = [...Array(97)].map((_, i) => price(i / 4));
+const pMin = Math.min(...PTS), pMax = Math.max(...PTS);
+const buyT = pMin + (pMax - pMin) * 0.28, sellT = pMin + (pMax - pMin) * 0.62;
+const plan = hr => price(hr) >= sellT ? 'sell' : (solar(hr) > 0.05 ? 'charge' : null);
+const SVGNS = 'http://www.w3.org/2000/svg';
+/* Draw the same day on any chart: price curve plus the charge / sell windows. */
+function dayChart(svg, W, top, bottom, withLabels) {
+  const x = hr => 8 + hr / 24 * (W - 16), y = p => bottom - (p - pMin) / (pMax - pMin) * (bottom - top);
+  svg.querySelector('.curve').setAttribute('d', PTS.map((p, i) => (i ? 'L' : 'M') + x(i / 4).toFixed(1) + ' ' + y(p).toFixed(1)).join(' '));
+  const zg = svg.querySelector('.zones'), zl = svg.querySelector('.zl'); let cur = null, start = 0;
+  for (let i = 0; i <= 96; i++) {
+    const hr = i / 4, m = i < 96 ? plan(hr) : null;
+    if (m !== cur) {
+      if (cur) {
+        const r = document.createElementNS(SVGNS, 'rect');
+        r.setAttribute('x', x(start)); r.setAttribute('width', x(hr) - x(start)); r.setAttribute('y', top - 8); r.setAttribute('height', bottom - top + 12); r.setAttribute('rx', 4);
+        r.setAttribute('fill', cur === 'sell' ? '#3b6cff' : '#16a34a'); r.setAttribute('fill-opacity', 0.14); zg.appendChild(r);
+        if (withLabels && zl && hr - start > 2.5) {
+          const t = document.createElementNS(SVGNS, 'text'); t.setAttribute('class', 'zlabel'); t.setAttribute('x', (x(start) + x(hr)) / 2); t.setAttribute('y', top - 14);
+          t.setAttribute('text-anchor', 'middle'); t.setAttribute('fill', cur === 'sell' ? '#3b6cff' : '#16a34a'); t.textContent = cur === 'sell' ? 'sell' : 'charge'; zl.appendChild(t);
+        }
+      }
+      cur = m; start = hr;
+    }
+  }
+  return { x, y };
+}
+const chart = document.getElementById('ai-chart');
+const ch = dayChart(chart, 320, 16, 92, false);
+const dchart = document.getElementById('dash-chart');
+const dch = dayChart(dchart, 640, 24, 160, false);
+{ // the big chart in "Why it matters": price labels for the noon low and the evening peak
+  const big = document.getElementById('price-chart');
+  const b = dayChart(big, 720, 44, 220, true);
+  const mark = (hr, txt, anchor) => {
+    const p = price(hr), t = document.createElementNS(SVGNS, 'text'); t.setAttribute('class', 'axis'); t.setAttribute('font-size', 13); t.setAttribute('font-weight', 700); t.setAttribute('fill', '#1b1d21');
+    t.setAttribute('x', b.x(hr) + (anchor === 'end' ? -8 : 8)); t.setAttribute('y', b.y(p) + (hr < 15 ? 22 : -10)); t.setAttribute('text-anchor', anchor); t.textContent = txt; big.appendChild(t);
+    const c = document.createElementNS(SVGNS, 'circle'); c.setAttribute('cx', b.x(hr)); c.setAttribute('cy', b.y(p)); c.setAttribute('r', 5); c.setAttribute('fill', '#1b1d21'); big.appendChild(c);
+  };
+  mark(13, '13:00 · €0.035 / kWh', 'middle'); mark(19.5, '19:30 · €0.17 / kWh', 'end');
+}
+const ui = { clock: document.getElementById('ai-clock'), mode: document.getElementById('ai-mode'), why: document.getElementById('ai-why'), price: document.getElementById('ai-price'), rev: document.getElementById('ai-rev'), dot: chart.querySelector('.dot'), cursor: chart.querySelector('.cursor') };
+const dash = { clock: document.getElementById('d-clock'), rev: document.getElementById('d-rev'), soc: document.getElementById('d-soc'), grid: document.getElementById('d-grid'), price: document.getElementById('d-price'), mode: document.getElementById('d-mode'), why: document.getElementById('d-why'), dot: dchart.querySelector('.dot'), cursor: dchart.querySelector('.cursor') };
+let soc = 0.35, rev = 0, lastHr = 0;
+const MODES = {
+  charge: { t: 'Charging', why: 'Low price — AI stores solar energy', c: '#16a34a' },
+  sell:   { t: 'Selling', why: 'Peak price — AI discharges batteries to the grid', c: '#3b6cff' },
+  hold:   { t: 'Waiting', why: 'AI is waiting for a better price', c: '#8b8f96' },
+};
+function simulate(t, dt) {
+  const hr = (t % DAY) / DAY * 24; if (hr < lastHr) rev = 0; lastHr = hr;
+  const p = price(hr), pv = solar(hr), dh = dt / DAY * 24;
+  let mode = 'hold', batP = 0;
+  if (p >= sellT && soc > 0.08) { mode = 'sell'; batP = -Math.min(PMAX, soc * CAP / Math.max(dh, 1e-3)); }
+  else if (p <= sellT && pv > 0.05 && soc < 0.98) { mode = 'charge'; batP = Math.min(pv, PMAX); }
+  else if (p <= buyT && soc < 0.98) { mode = 'hold'; }
+  soc = Math.min(1, Math.max(0, soc + batP * dh / CAP));
+  const pvToGrid = Math.max(0, pv - Math.max(0, batP)), batToGrid = Math.max(0, -batP), gridP = pvToGrid + batToGrid;
+  rev += gridP * p * dh * 1000;
+  FLOW.cable_solar_trunk.on = pv > 0.05 ? 1 : 0;
+  FLOW.cable_solar_battery.on = mode === 'charge' ? 1 : 0;
+  FLOW.cable_battery_grid.on = mode === 'sell' ? 1 : 0;
+  FLOW.cable_solar_grid.on = pvToGrid > 0.05 ? 1 : 0;
+  socMat.forEach((m, i) => { const lit = soc > i / 4 + 0.05; m.color.setHex(lit ? 0x22c55e : 0x8d9299); m.emissiveIntensity = lit ? 0.6 : 0; });
+  const fmt = n => n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  L.pv.v.textContent = fmt(pv * 1000); L.grid.v.textContent = fmt(gridP * 1000);
+  L.bat.v.textContent = Math.round(soc * 100); L.bat.u.textContent = '% · ' + (soc * CAP).toFixed(1) + ' MWh';
+  const M_ = MODES[mode]; L.ai.t.textContent = M_.t; L.ai.t.style.color = M_.c;
+  const clockTxt = String(Math.floor(hr)).padStart(2, '0') + ':' + String(Math.floor((hr % 1) * 60)).padStart(2, '0');
+  ui.clock.textContent = clockTxt;
+  ui.mode.textContent = M_.t; ui.mode.style.background = M_.c; ui.why.textContent = M_.why;
+  ui.price.textContent = '€' + p.toFixed(3) + '/kWh'; ui.rev.textContent = '€' + fmt(rev);
+  ui.dot.setAttribute('cx', ch.x(hr)); ui.dot.setAttribute('cy', ch.y(p)); ui.dot.setAttribute('fill', M_.c);
+  ui.cursor.setAttribute('x1', ch.x(hr)); ui.cursor.setAttribute('x2', ch.x(hr));
+  // live dashboard section mirrors the same day
+  dash.clock.textContent = clockTxt; dash.rev.textContent = '€' + fmt(rev); dash.soc.textContent = Math.round(soc * 100) + ' %';
+  dash.grid.textContent = fmt(gridP * 1000) + ' kW'; dash.price.textContent = '€' + p.toFixed(3) + '/kWh';
+  dash.mode.textContent = M_.t; dash.mode.style.background = M_.c; dash.why.textContent = M_.why;
+  dash.dot.setAttribute('cx', dch.x(hr)); dash.dot.setAttribute('cy', dch.y(p)); dash.dot.setAttribute('fill', M_.c);
+  dash.cursor.setAttribute('x1', dch.x(hr)); dash.cursor.setAttribute('x2', dch.x(hr));
+  aiMat.emissiveIntensity = mode === 'hold' ? 0.5 : 1.1;
+  return mode;
+}
+let lastT = 0;
+function placeLabels() {
+  const cam = stage._camera; if (!cam) return;
+  const r = stage.getBoundingClientRect();
+  if (layer._top !== stage.offsetTop || layer._h !== r.height) { // keep the label layer glued to the stage box (on phones the text card sits above it)
+    layer._top = stage.offsetTop; layer._h = r.height; layer.style.top = layer._top + 'px'; layer.style.height = r.height + 'px';
+  }
+  labelDefs.forEach(d => {
+    const p = d.at.clone().project(cam);
+    const vis = p.z < 1 && p.z > -1;
+    d.el.style.display = vis ? '' : 'none';
+    d.el.style.transform = `translate(${(p.x + 1) / 2 * r.width}px, ${(1 - p.y) / 2 * r.height}px)`;
+  });
+}
+const clock = new THREE.Clock();
+(function tick() {
+  const t = clock.getElapsedTime(), dt = Math.min(0.1, t - lastT); lastT = t;
+  const mode = simulate(t, dt);
+  aiRing.rotation.y = t * 1.5; aiRing.rotation.x = Math.sin(t) * 0.4;
+  waves.forEach(w => { const u = (w.off + t * 0.5) % 1; w.m.position.set(aiPos.x, 0.6, aiPos.z); w.m.scale.setScalar(1 + u * 14); w.m.material.opacity = (1 - u) * (mode === 'hold' ? 0.25 : 0.7); });
+  flows.forEach(f => { f.amt += (f.on - f.amt) * Math.min(1, dt * 4); });
+  flows.forEach(f => f.dashes.forEach(p => {
+    const u = (p.off + t * 8 / f.len) % 1;
+    const pos = f.curve.getPointAt(u), tan = f.curve.getTangentAt(u);
+    p.m.position.set(pos.x, 0.52, pos.z);
+    p.m.quaternion.setFromUnitVectors(UP, tan.normalize());
+    const fade = Math.min(1, u * 12, (1 - u) * 12) * f.amt; p.m.visible = fade > 0.02; p.m.scale.set(fade, fade, fade);
+  }));
+  fans.forEach(fn => fn.rotation.x = t * 6);
+  mat.green.emissiveIntensity = 0.45 + 0.35 * (0.5 + 0.5 * Math.sin(t * 3));
+  placeLabels();
+  requestAnimationFrame(tick);
+})();
+</script>
+
+<script>
+/* page: gentle reveal on scroll, contact form (prototype — nothing is sent) */
+(function () {
+  const els = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -10% 0px' });
+    els.forEach(el => io.observe(el));
+  } else els.forEach(el => el.classList.add('in'));
+  const form = document.getElementById('leadForm');
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const name = document.getElementById('f-name'), contact = document.getElementById('f-contact');
+    for (const f of [name, contact]) { if (!f.value.trim()) { f.focus(); f.style.borderColor = '#e5484d'; return; } f.style.borderColor = ''; }
+    document.getElementById('f-submit').hidden = true;
+    document.getElementById('thanks').hidden = false;
+  });
+})();
+</script>

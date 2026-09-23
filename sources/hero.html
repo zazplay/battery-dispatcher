@@ -1,0 +1,373 @@
+<title>Battery Day Loop</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap">
+<style>
+:root{
+  --bg:#F3F6FB; --card:#FFFFFF; --ink:#14304F; --muted:#52657F; --brand:#1E4E8C; --brand-ink:#FFFFFF;
+  --soft:#E8F0FA; --line:#D6E0EC; --shadow:0 14px 36px rgba(30,78,140,.10);
+  --teal:#14A38B; --amber:#E8931C; --violet:#7C5CE0; --yellow:#F5B83D; --grey:#8FA3BF;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1B2E; --card:#172640; --ink:#E8EFF8; --muted:#A9B8CC; --brand:#8AB8F0; --brand-ink:#0F1B2E;
+    --soft:#213656; --line:#2C4266; --shadow:0 14px 36px rgba(0,0,0,.35); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1B2E; --card:#172640; --ink:#E8EFF8; --muted:#A9B8CC; --brand:#8AB8F0; --brand-ink:#0F1B2E;
+  --soft:#213656; --line:#2C4266; --shadow:0 14px 36px rgba(0,0,0,.35); color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,sans-serif;padding-inline:16px;margin:0}
+.wrap{max-width:1200px;margin:0 auto;padding-block:26px 56px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:17px;color:var(--brand);margin-bottom:34px}
+.brand svg{width:24px;height:24px}
+.top{display:grid;grid-template-columns:1.15fr 1fr;gap:32px;align-items:end;margin-bottom:26px}
+h1{font-size:clamp(42px,6vw,74px);line-height:.98;letter-spacing:-.035em;font-weight:800;color:var(--brand);margin:0;text-wrap:balance}
+.lead{font-size:18px;line-height:1.5;color:var(--muted);max-width:40ch;margin:0 0 18px}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn{font:inherit;font-weight:600;font-size:15px;padding:12px 18px;border-radius:10px;border:0;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.pri{background:var(--brand);color:var(--brand-ink)}
+.btn.sec{background:var(--soft);color:var(--brand)}
+.stage{background:var(--card);border-radius:24px;box-shadow:var(--shadow);overflow:hidden;border:1px solid var(--line)}
+.scene svg{display:block;width:100%;height:auto}
+.bar{padding:16px 22px 20px;display:grid;gap:14px;border-top:1px solid var(--line)}
+.cap{display:grid;grid-template-columns:auto auto 1fr;gap:10px 12px;align-items:baseline}
+.cap .dot{width:10px;height:10px;border-radius:50%;background:var(--teal);align-self:center;transition:background .3s}
+.cap time{font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:700;font-size:17px;color:var(--brand);font-variant-numeric:tabular-nums}
+.cap b{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.why{grid-column:3;color:var(--muted);font-size:15px;line-height:1.45;margin:0}
+.ctl{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.play{width:44px;height:44px;border-radius:50%;background:var(--brand);border:0;color:var(--brand-ink);display:grid;place-items:center;cursor:pointer;flex:none}
+.play svg{width:18px;height:18px;fill:currentColor}
+.track{flex:1;min-width:220px}
+input[type=range]{width:100%;accent-color:var(--brand);margin:0;cursor:pointer}
+.ticks{display:flex;justify-content:space-between;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:var(--muted);margin-top:4px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--soft);border-color:var(--brand);color:var(--brand)}
+.chip time{font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:700;margin-right:5px}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--brand);outline-offset:3px}
+@media (max-width:760px){.top{grid-template-columns:1fr;gap:18px}.cap{grid-template-columns:auto auto;}.why{grid-column:1/-1}.cap b{font-size:16px}}
+
+/* ---- scene ---- */
+svg text{font-family:Inter,system-ui,sans-serif}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.base{stroke:var(--cable,#C7D3E3);stroke-width:6;fill:none}
+.flow{fill:none;stroke-width:6;stroke-linecap:round;stroke-dasharray:10 14;animation:flow .55s linear infinite;visibility:hidden}
+.flow.on{visibility:visible}
+.flow.rev{animation-direction:reverse}
+.flow.slow{animation-duration:1.1s}
+.flow.fast{animation-duration:.38s}
+@keyframes flow{to{stroke-dashoffset:-24}}
+#eyes{transform-box:fill-box;transform-origin:center;transition:transform .1s}
+.blink #eyes{transform:scaleY(.12)}
+#bubble{transition:opacity .2s}
+#sun,#sunGlow,#moon{transition:opacity .4s}
+#cab .lbl rect{fill:#fff;stroke:#C7D3E3;stroke-width:1.5}
+#cab .lbl text{fill:#5B6E8A;font-size:10px;font-weight:700;letter-spacing:.7px}
+#cab[data-mode="charge"] #lblC rect{fill:#14A38B;stroke:#14A38B}
+#cab[data-mode="charge"] #lblC text,#cab[data-mode="sell"] #lblS text,#cab[data-mode="hold"] #lblH text{fill:#fff}
+#cab[data-mode="sell"] #lblS rect{fill:#E8931C;stroke:#E8931C}
+#cab[data-mode="hold"] #lblH rect{fill:#8FA3BF;stroke:#8FA3BF}
+#cab .led{fill:#DCE5F0}
+#cab[data-mode="charge"] #ledC{fill:#14A38B}
+#cab[data-mode="hold"] #ledH{fill:#8FA3BF}
+#cab[data-mode="sell"] #ledS{fill:#E8931C}
+#pulse{fill:none;stroke-width:3;opacity:0}
+#pulse.go{animation:pulse .5s ease-out}
+@keyframes pulse{0%{opacity:.9;r:12}100%{opacity:0;r:34}}
+#city .win{fill:#D6E0EE;transition:fill .6s}
+#city.lit .win{fill:#F5D26B}
+@media (prefers-reduced-motion: reduce){.flow{animation:none;stroke-dasharray:10 10}#pulse.go{animation:none}}
+</style>
+
+<main class="wrap">
+  <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4" transform="rotate(45 12 12)" fill="#1E4E8C"/><rect x="9" y="9" width="6" height="6" rx="1.5" transform="rotate(45 12 12)" fill="#F5B83D"/></svg>Your Brand</div>
+
+  <section class="top">
+    <h1>Your battery can earn more.</h1>
+    <div>
+      <p class="lead">A smart system that charges when power is cheap and sells when it's expensive. Automatically, 24/7.</p>
+      <div class="btns">
+        <button class="btn pri" id="btnHow" type="button">See how it works</button>
+        <a class="btn sec" href="#demo">Get a demo</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="stage" id="demo" aria-label="How the system runs one day">
+    <div class="scene">
+<svg id="scene" viewBox="0 0 1200 500" role="img" aria-label="Animated scene: solar panels, battery, an AI operator at a switch, the grid and a city through one day">
+  <defs>
+    <radialGradient id="gSun"><stop offset="0" stop-color="#F5B83D" stop-opacity=".55"/><stop offset="1" stop-color="#F5B83D" stop-opacity="0"/></radialGradient>
+    <linearGradient id="gHz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".75"/></linearGradient>
+    <filter id="fShadow" x="-10%" y="-10%" width="120%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#1E4E8C" flood-opacity=".16"/></filter>
+    <g id="panel">
+      <polygon points="0,52 90,52 112,0 22,0" fill="#2C63AB" stroke="#1E4E8C" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M52 0 L30 52 M82 0 L60 52 M11 26 H101" stroke="#fff" stroke-opacity=".5" stroke-width="1.5"/>
+      <path d="M40 52 V78 M76 52 V78" stroke="#6F87A8" stroke-width="4" stroke-linecap="round"/>
+    </g>
+  </defs>
+
+  <!-- sky & ground -->
+  <rect id="sky" width="1200" height="430" fill="#D7E8FA"/>
+  <g id="stars" opacity="0"></g>
+  <rect id="hz" y="250" width="1200" height="180" fill="url(#gHz)"/>
+  <circle id="sunGlow" cx="600" cy="60" r="90" fill="url(#gSun)"/>
+  <circle id="sun" cx="600" cy="60" r="26" fill="#F5B83D"/>
+  <g id="moon" opacity="0"><circle id="moonA" r="18" fill="#E7EDF7"/><circle id="moonB" cx="9" cy="-7" r="15" fill="#14264A"/></g>
+  <rect id="ground" y="430" width="1200" height="70" fill="#E3ECF6"/>
+  <line id="hzLine" x1="0" y1="430" x2="1200" y2="430" stroke="#C4D3E6" stroke-width="2"/>
+
+  <!-- cables: one bus in the ground, up the tower, over to the city -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path class="base" d="M300 440 H950 V300 Q1000 336 1046 300"/>
+    <path class="base" d="M300 430 V440 M480 430 V440 M680 430 V440"/>
+    <path id="fSB" class="flow" d="M300 440 H480"/>
+    <path id="fBC" class="flow" d="M480 440 H680"/>
+    <path id="fCG" class="flow" d="M680 440 H950 V300"/>
+    <path id="fGC" class="flow" d="M950 300 Q1000 336 1046 300"/>
+  </g>
+
+  <!-- solar -->
+  <g id="solar" transform="translate(36,352)">
+    <use href="#panel" x="0"/><use href="#panel" x="96"/><use href="#panel" x="192"/>
+  </g>
+
+  <!-- battery -->
+  <g id="battery" transform="translate(400,250)">
+    <g><rect x="22" y="-8" width="26" height="8" rx="3" fill="#1E4E8C"/>
+      <rect width="70" height="180" rx="10" fill="#fff" stroke="#1E4E8C" stroke-width="2.5"/>
+      <rect x="12" y="14" width="46" height="150" rx="6" fill="#E8F0FA"/>
+      <rect class="lvl" x="12" y="134" width="46" height="30" rx="6" fill="#9FB3CC"/></g>
+    <g transform="translate(90,0)"><rect x="22" y="-8" width="26" height="8" rx="3" fill="#1E4E8C"/>
+      <rect width="70" height="180" rx="10" fill="#fff" stroke="#1E4E8C" stroke-width="2.5"/>
+      <rect x="12" y="14" width="46" height="150" rx="6" fill="#E8F0FA"/>
+      <rect class="lvl" x="12" y="134" width="46" height="30" rx="6" fill="#9FB3CC"/></g>
+    <g transform="translate(80,-40)"><rect x="-42" y="-16" width="84" height="32" rx="16" fill="#fff" stroke="#C7D3E3" stroke-width="1.5"/>
+      <text id="socTxt" class="mono" y="6" text-anchor="middle" font-size="18" font-weight="700" fill="#1E4E8C">20 %</text></g>
+  </g>
+
+  <!-- AI control cabinet with the switch -->
+  <g id="cab" transform="translate(590,230)" data-mode="hold">
+    <rect width="180" height="200" rx="14" fill="#fff" stroke="#1E4E8C" stroke-width="2.5"/>
+    <rect x="14" y="14" width="152" height="44" rx="8" fill="#14264A"/>
+    <rect x="22" y="24" width="30" height="24" rx="6" fill="#1E4E8C"/>
+    <text x="37" y="41" class="mono" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">AI</text>
+    <text id="screenTxt" x="112" y="42" class="mono" font-size="17" font-weight="700" fill="#9FB3CC" text-anchor="middle">HOLDING</text>
+    <path d="M40 142 A50 50 0 0 1 140 142" fill="none" stroke="#DCE5F0" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="46.7" cy="117" r="6" fill="#C7D3E3"/><circle cx="90" cy="92" r="6" fill="#C7D3E3"/><circle cx="133.3" cy="117" r="6" fill="#C7D3E3"/>
+    <g id="lblC" class="lbl" transform="translate(28,98)"><rect x="-30" y="-10" width="60" height="20" rx="10"/><text y="4" text-anchor="middle">CHARGE</text></g>
+    <g id="lblH" class="lbl" transform="translate(90,70)"><rect x="-26" y="-10" width="52" height="20" rx="10"/><text y="4" text-anchor="middle">HOLD</text></g>
+    <g id="lblS" class="lbl" transform="translate(150,98)"><rect x="-26" y="-10" width="52" height="20" rx="10"/><text y="4" text-anchor="middle">SELL</text></g>
+    <circle id="pulse" cx="90" cy="98" r="12" stroke="#1E4E8C"/>
+    <g id="lever" transform="translate(90,142) rotate(0)">
+      <line x1="0" y1="0" x2="0" y2="-44" stroke="#1E4E8C" stroke-width="10" stroke-linecap="round"/>
+      <circle cy="-44" r="10" fill="#1E4E8C" stroke="#fff" stroke-width="3"/>
+    </g>
+    <circle cx="90" cy="142" r="12" fill="#1E4E8C"/><circle cx="90" cy="142" r="4" fill="#fff"/>
+    <g transform="translate(90,180)"><circle id="ledC" class="led" cx="-24" r="5"/><circle id="ledH" class="led" r="5"/><circle id="ledS" class="led" cx="24" r="5"/></g>
+  </g>
+
+  <!-- price board on the tower, tower, city -->
+  <g id="tower" transform="translate(900,210)" stroke="#6F87A8" stroke-width="3" fill="none" stroke-linecap="round">
+    <path d="M15 220 L42 0 M85 220 L58 0"/>
+    <path d="M12 30 H88 M22 72 H78 M40 30 v9 M60 30 v9 M32 72 v8 M68 72 v8"/>
+    <path d="M18 195 L78 165 M22 165 L74 135 M26 135 L70 105 M30 105 L66 75"/>
+  </g>
+  <g id="board" transform="translate(880,146)">
+    <rect id="boardBg" width="150" height="96" rx="12" fill="#fff" stroke="#1E4E8C" stroke-width="2.5" filter="url(#fShadow)"/>
+    <text x="75" y="22" text-anchor="middle" font-size="10" letter-spacing="1.2" font-weight="700" fill="#5B6E8A">GRID PRICE NOW</text>
+    <text id="priceTxt" x="75" y="58" text-anchor="middle" class="mono" font-size="30" font-weight="700" fill="#1E4E8C"><tspan id="priceNum">92</tspan><tspan font-size="12" dx="4">€/MWh</tspan></text>
+    <text id="priceCtx" x="75" y="82" text-anchor="middle" font-size="11" font-weight="600" fill="#5B6E8A">day average 83 €/MWh</text>
+  </g>
+  <g id="city" transform="translate(1040,430)"></g>
+
+  <!-- speech bubble (drawn under the robot so the tail tucks behind the head) -->
+  <g id="bubble" opacity="0">
+    <path d="M782 246 H1010 A12 12 0 0 1 1022 258 V282 A12 12 0 0 1 1010 294 H836 L808 314 L818 294 H782 A12 12 0 0 1 770 282 V258 A12 12 0 0 1 782 246 Z" fill="#fff" stroke="#1E4E8C" stroke-width="2"/>
+    <text id="bubbleTxt" x="896" y="275" text-anchor="middle" font-size="14" font-weight="600" fill="#14304F">Peak price → sell!</text>
+  </g>
+
+  <!-- robot operator -->
+  <line id="arm" x1="794" y1="366" x2="680" y2="328" stroke="#1E4E8C" stroke-width="9" stroke-linecap="round"/>
+  <g id="robot" transform="translate(782,296)">
+    <rect x="14" y="118" width="44" height="6" rx="3" fill="#8FA3BF"/><path d="M22 124 V134 M50 124 V134" stroke="#8FA3BF" stroke-width="4" stroke-linecap="round"/>
+    <rect x="12" y="62" width="48" height="58" rx="12" fill="#1E4E8C"/>
+    <rect x="24" y="76" width="24" height="14" rx="4" fill="#fff" opacity=".85"/>
+    <line x1="36" y1="12" x2="36" y2="-6" stroke="#1E4E8C" stroke-width="3"/>
+    <circle id="ant" cx="36" cy="-10" r="6" fill="#8FA3BF"/>
+    <rect x="6" y="12" width="60" height="48" rx="16" fill="#fff" stroke="#1E4E8C" stroke-width="2.5"/>
+    <g id="eyes"><circle cx="27" cy="36" r="6" fill="#1E4E8C"/><circle cx="49" cy="36" r="6" fill="#1E4E8C"/></g>
+    <path d="M31 48 Q38 53 45 48" stroke="#1E4E8C" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </g>
+  <circle id="hand" cx="680" cy="328" r="7" fill="#fff" stroke="#1E4E8C" stroke-width="2.5"/>
+
+  <!-- labels -->
+  <g id="labels" font-size="15" font-weight="600" text-anchor="middle" fill="#5B6E8A">
+    <text x="188" y="472">Solar · 1.8 MWp</text>
+    <text x="480" y="472">Battery · 2 MWh</text>
+    <text x="722" y="472">AI operator</text>
+    <text x="950" y="472">Grid</text>
+    <text x="1116" y="472">City</text>
+  </g>
+
+  <!-- HUD -->
+  <g transform="translate(36,30)">
+    <rect width="236" height="90" rx="16" fill="#fff" filter="url(#fShadow)"/>
+    <text x="20" y="30" font-size="11" letter-spacing="1.2" font-weight="700" fill="#5B6E8A">BATTERY EARNED TODAY</text>
+    <text id="earnTxt" x="20" y="70" class="mono" font-size="34" font-weight="700" fill="#1E4E8C">+ 0 €</text>
+  </g>
+  <text id="clock" x="1164" y="72" text-anchor="end" class="mono" font-size="40" font-weight="700" fill="#14304F">10:00</text>
+  <text id="dayPart" x="1164" y="96" text-anchor="end" font-size="15" font-weight="600" fill="#5B6E8A">Noon</text>
+</svg>
+    </div>
+
+    <div class="bar">
+      <div class="cap">
+        <span class="dot" id="capDot"></span>
+        <time id="capTime">10:00</time>
+        <b id="capTitle">Noon — price below zero. We charge and get paid for it.</b>
+        <p class="why" id="capWhy">Charging from solar and from the grid. At a negative price the grid pays us: +24 €.</p>
+      </div>
+      <div class="ctl">
+        <button class="play" id="btnPlay" type="button" aria-label="Pause">
+          <svg viewBox="0 0 20 20" id="icoPause"><rect x="4" y="3" width="4" height="14" rx="1"/><rect x="12" y="3" width="4" height="14" rx="1"/></svg>
+          <svg viewBox="0 0 20 20" id="icoPlay" hidden><path d="M6 3.5v13l11-6.5z"/></svg>
+        </button>
+        <div class="track">
+          <input type="range" id="slider" min="0" max="1439" value="600" step="1" aria-label="Time of day">
+          <div class="ticks"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
+        </div>
+        <div class="chips" id="chips">
+          <button class="chip" type="button" data-t="7"><time>07:00</time>Morning</button>
+          <button class="chip" type="button" data-t="13"><time>13:00</time>Noon</button>
+          <button class="chip" type="button" data-t="19"><time>19:00</time>Evening</button>
+          <button class="chip" type="button" data-t="23"><time>23:00</time>Night</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function(){
+const $ = id => document.getElementById(id);
+const P = [92,85,80,78,80,88,105,118,96,62,21,-4,-18,-24,-12,6,48,112,176,228,204,156,118,101];
+const AVG = 83;
+const C = {teal:'#14A38B', amber:'#E8931C', violet:'#7C5CE0', yellow:'#F5B83D', grey:'#8FA3BF', navy:'#1E4E8C', ink:'#14304F', muted:'#5B6E8A', light:'#B8C7DE'};
+const SKY = [[0,'#14264A'],[4.5,'#14264A'],[6,'#F4C9AE'],[7.5,'#D7E8FA'],[16.5,'#D7E8FA'],[18.5,'#F6C596'],[20.3,'#E8A06E'],[21.5,'#4E5A8F'],[22.5,'#14264A'],[24,'#14264A']];
+const GND = [[0,'#1F3459'],[4.5,'#1F3459'],[6,'#EADBD0'],[7.5,'#E3ECF6'],[16.5,'#E3ECF6'],[18.5,'#EBDAC8'],[20.3,'#E3C7AE'],[21.5,'#3F4B7B'],[22.5,'#1F3459'],[24,'#1F3459']];
+const NIGHT = [[0,1],[4.5,1],[6,.5],[7,0],[18.5,0],[20,.5],[21.5,1],[24,1]];
+const TXT = {
+  NIGHT:    {title:'Night — keeping a 20 % reserve.', why:'Nothing worth selling at night prices. The reserve stays for the site.', part:'Night'},
+  MORNING:  {title:'Morning — solar goes straight to the grid.', why:'Solar covers the site, the surplus is sold at 118 €/MWh. The battery waits for a better moment.', part:'Morning'},
+  NOON:     {title:'Noon — price below zero. We charge and get paid for it.', why:'Charging from solar and from the grid. At a negative price the grid pays us: +24 €.', part:'Noon'},
+  AFTERNOON:{title:'Afternoon — full battery, waiting for the peak.', why:'Selling now would bring 48 €/MWh. The evening pays 228.', part:'Afternoon'},
+  EVENING:  {title:'Evening — peak price. We sell 1 MW.', why:'Selling at up to 228 €/MWh. Keeping 20 % for the night.', part:'Evening'},
+  NIGHT2:   {title:'Night — done for today: +355 €.', why:'150 € more than the same battery without the system.', part:'Night'}
+};
+const LEVER = {NIGHT:0, MORNING:0, NOON:-60, AFTERNOON:0, EVENING:60, NIGHT2:0};
+const MODE  = {NIGHT:'hold', MORNING:'hold', NOON:'charge', AFTERNOON:'hold', EVENING:'sell', NIGHT2:'hold'};
+const MODECOL = {hold:C.grey, charge:C.teal, sell:C.amber};
+const BUBBLES = [[6.6,"Sun's up. Selling solar, battery waits."],[10,'Price is falling → charge!'],[18,'Peak price → sell!'],[21,'Done. +355 € today.']];
+
+const hex = c => [parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parseInt(c.slice(5,7),16)];
+const mix = (a,b,f) => { const A=hex(a),B=hex(b); return 'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*f)).join(',')+')'; };
+function kf(arr,t){ for(let i=0;i<arr.length-1;i++){ const [t0,a]=arr[i],[t1,b]=arr[i+1]; if(t>=t0&&t<=t1){ const f=(t-t0)/(t1-t0); return typeof a==='number'? a+(b-a)*f : mix(a,b,f);} } return arr[arr.length-1][1]; }
+const price = t => { const h=Math.floor(t)%24, f=t-Math.floor(t); return P[h]+(P[(h+1)%24]-P[h])*f; };
+const state = t => t<5?'NIGHT':t<10?'MORNING':t<15?'NOON':t<18?'AFTERNOON':t<21?'EVENING':'NIGHT2';
+const soc = t => t<10?20:t<15?20+80*(t-10)/5:t<18?100:t<21?100-80*(t-18)/3:20;
+const earned = t => t<11?0:t<15?24*(t-11)/4:t<18?24:t<21?24+331*(t-18)/3:355;
+const pad = n => (n<10?'0':'')+n;
+const clockStr = t => { const h=Math.floor(t)%24, m=Math.floor((t-Math.floor(t))*60); return pad(h)+':'+pad(m); };
+
+/* generated bits: stars and city windows */
+(function build(){
+  const S=$('stars'); let seed=7; const rnd=()=> (seed=(seed*9301+49297)%233280)/233280;
+  for(let i=0;i<34;i++){ const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',(rnd()*1200).toFixed(0)); c.setAttribute('cy',(rnd()*260+10).toFixed(0)); c.setAttribute('r',(rnd()*1.3+.7).toFixed(1)); c.setAttribute('fill','#fff'); S.appendChild(c); }
+  const city=$('city'); const B=[[0,30,160,'#AFC1D8'],[34,24,112,'#C0CFE2'],[62,34,146,'#A6B8D0'],[100,26,92,'#C0CFE2'],[130,22,124,'#B4C4DA']];
+  B.forEach(([x,w,h,f])=>{ const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    r.setAttribute('x',x); r.setAttribute('y',-h); r.setAttribute('width',w); r.setAttribute('height',h); r.setAttribute('fill',f); city.appendChild(r);
+    const cols=Math.floor((w-6)/9), rows=Math.floor((h-12)/15);
+    for(let i=0;i<cols;i++) for(let j=0;j<rows;j++){ const win=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      win.setAttribute('class','win'); win.setAttribute('x',x+6+i*9); win.setAttribute('y',-h+10+j*15); win.setAttribute('width',5); win.setAttribute('height',7); win.setAttribute('rx',1); city.appendChild(win); } });
+})();
+
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let t = RM ? 19 : 10, playing = !RM, scrubbing=false, lever=0, prevState=null, last=performance.now(), lastGlow=-1;
+const SPEED = 1; /* hours of scene time per real second: 24 h in 24 s */
+
+const svg=$('scene');
+const flows={SB:$('fSB'),BC:$('fBC'),CG:$('fCG'),GC:$('fGC')};
+function flow(el,on,color,rev,speed){ el.classList.toggle('on',!!on); if(!on) return; el.setAttribute('stroke',color); el.classList.toggle('rev',!!rev); el.classList.toggle('slow',speed==='slow'); el.classList.toggle('fast',speed==='fast'); }
+function setFlows(s,p,sunUp){
+  const off=el=>flow(el,false);
+  if(s==='NIGHT'||s==='NIGHT2'){ off(flows.SB); off(flows.BC); off(flows.CG); flow(flows.GC,true,C.grey,false,'slow'); }
+  else if(s==='MORNING'){ flow(flows.SB,sunUp,C.yellow); flow(flows.BC,sunUp,C.yellow); flow(flows.CG,sunUp,C.yellow); flow(flows.GC,true,sunUp?C.yellow:C.grey,false,sunUp?'':'slow'); }
+  else if(s==='NOON'){ flow(flows.SB,true,C.teal,false,'fast'); flow(flows.BC,p<0,C.violet,true,'fast'); flow(flows.CG,p<0,C.violet,true,'fast'); flow(flows.GC,true,C.grey,false,'slow'); }
+  else if(s==='AFTERNOON'){ flow(flows.SB,sunUp,C.yellow,false,'slow'); flow(flows.BC,sunUp,C.yellow,false,'slow'); flow(flows.CG,sunUp,C.yellow,false,'slow'); flow(flows.GC,true,sunUp?C.yellow:C.grey,false,'slow'); }
+  else { off(flows.SB); flow(flows.BC,true,C.amber,false,'fast'); flow(flows.CG,true,C.amber,false,'fast'); flow(flows.GC,true,C.amber,false,'fast'); }
+}
+const chips=[...document.querySelectorAll('.chip')];
+
+function render(dt){
+  const s=state(t), n=kf(NIGHT,t), p=price(t), sc=soc(t), e=earned(t), mode=MODE[s], mcol=MODECOL[mode];
+  /* sky, ground, stars */
+  const sky=kf(SKY,t); $('sky').setAttribute('fill',sky); $('ground').setAttribute('fill',kf(GND,t));
+  $('hz').setAttribute('opacity',((1-n)*.6).toFixed(2)); $('stars').setAttribute('opacity',(n*.9).toFixed(2));
+  $('hzLine').setAttribute('stroke',mix('#C4D3E6','#2E4470',n)); svg.style.setProperty('--cable',mix('#C7D3E3','#3A4E77',n)); $('moonB').setAttribute('fill',sky);
+  /* sun & moon */
+  const th=Math.PI*(t-5)/16, alt=Math.sin(th), sunVis=t>4.6&&t<21.4;
+  if(sunVis){ const x=60+1080*(t-5)/16, y=430-370*alt; ['sun','sunGlow'].forEach(id=>{ const el=$(id); el.setAttribute('cx',x.toFixed(1)); el.setAttribute('cy',y.toFixed(1)); el.setAttribute('opacity',1); }); }
+  else { $('sun').setAttribute('opacity',0); $('sunGlow').setAttribute('opacity',0); }
+  const tm=(t+3)%24; if(tm<8.4){ const f=tm/8, x=60+1080*f, y=430-300*Math.sin(Math.PI*f); $('moon').setAttribute('transform',`translate(${x.toFixed(1)},${y.toFixed(1)})`); $('moon').setAttribute('opacity',Math.min(1,Math.max(0,(0.2-Math.abs(f-.5)+.3)*2.5)).toFixed(2)); } else $('moon').setAttribute('opacity',0);
+  const glow=Math.round(Math.max(0,alt)*10)/10; if(glow!==lastGlow){ lastGlow=glow; $('solar').style.filter=glow>0?`drop-shadow(0 0 ${(6+12*glow).toFixed(0)}px rgba(245,184,61,${(0.25+0.6*glow).toFixed(2)}))`:'none'; }
+  /* battery */
+  const h=150*sc/100; document.querySelectorAll('.lvl').forEach(r=>{ r.setAttribute('y',(14+150-h).toFixed(1)); r.setAttribute('height',h.toFixed(1)); r.setAttribute('fill',mode==='hold'?'#9FB3CC':mcol); });
+  $('socTxt').textContent=Math.round(sc)+' %';
+  /* switch, robot */
+  const target=LEVER[s]; lever+=(target-lever)*Math.min(1,dt*9); if(Math.abs(target-lever)<.05) lever=target;
+  $('lever').setAttribute('transform',`translate(90,142) rotate(${lever.toFixed(2)})`);
+  const rad=lever*Math.PI/180, kx=680+44*Math.sin(rad), ky=372-44*Math.cos(rad);
+  $('arm').setAttribute('x2',kx.toFixed(1)); $('arm').setAttribute('y2',ky.toFixed(1)); $('hand').setAttribute('cx',kx.toFixed(1)); $('hand').setAttribute('cy',ky.toFixed(1));
+  $('cab').dataset.mode=mode; $('ant').setAttribute('fill',mcol);
+  $('screenTxt').textContent=mode==='charge'?'CHARGING':mode==='sell'?'SELLING':'HOLDING'; $('screenTxt').setAttribute('fill',mode==='hold'?'#9FB3CC':mcol);
+  if(s!==prevState){ if(prevState!==null){ $('robot').classList.add('blink'); setTimeout(()=>$('robot').classList.remove('blink'),160);
+      if(MODE[prevState]!==mode){ const pl=$('pulse'); pl.setAttribute('stroke',mcol); pl.classList.remove('go'); void pl.getBBox(); pl.classList.add('go'); } }
+    prevState=s; $('capTitle').textContent=TXT[s].title; $('capWhy').textContent=TXT[s].why; $('dayPart').textContent=TXT[s].part; $('capDot').style.background=mcol;
+    chips.forEach(ch=>ch.setAttribute('aria-pressed', String(TXT[s].part===ch.lastChild.textContent.trim()))); }
+  const b=BUBBLES.find(([bt])=>t>=bt&&t<bt+2.6); $('bubble').setAttribute('opacity',b?1:0); if(b) $('bubbleTxt').textContent=b[1];
+  /* price board */
+  const pr=Math.round(p); $('priceNum').textContent=(pr<0?'−':'')+Math.abs(pr);
+  let bg='#fff', st=C.navy, ctx='day average '+AVG+' €/MWh';
+  if(p<0){ bg='#F1ECFD'; st=C.violet; ctx='below zero — the grid pays us to charge'; }
+  else if(p>=150){ bg='#FDF1E3'; st=C.amber; ctx='peak — '+(p/AVG).toFixed(1)+'× the day average'; }
+  $('boardBg').setAttribute('fill',bg); $('boardBg').setAttribute('stroke',st); $('priceTxt').setAttribute('fill',st); $('priceCtx').textContent=ctx;
+  /* money, clock, text colors */
+  $('earnTxt').textContent='+ '+Math.round(e)+' €';
+  const cs=clockStr(t); $('clock').textContent=cs; $('capTime').textContent=cs;
+  $('clock').setAttribute('fill',mix(C.ink,'#FFFFFF',n)); $('dayPart').setAttribute('fill',mix(C.muted,C.light,n)); $('labels').setAttribute('fill',mix(C.muted,C.light,n));
+  $('city').classList.toggle('lit',n>.35);
+  setFlows(s,p,t>5.4&&t<20.6);
+  if(!scrubbing) $('slider').value=Math.round(t*60);
+}
+
+function frame(now){ const dt=Math.min(.05,(now-last)/1000); last=now; if(playing&&!scrubbing) t=(t+dt*SPEED)%24; render(dt); requestAnimationFrame(frame); }
+
+/* controls */
+function setPlaying(v){ playing=v; $('icoPause').hidden=!v; $('icoPlay').hidden=v; $('btnPlay').setAttribute('aria-label',v?'Pause':'Play'); }
+$('btnPlay').addEventListener('click',()=>setPlaying(!playing));
+const sl=$('slider');
+sl.addEventListener('pointerdown',()=>{scrubbing=true;}); sl.addEventListener('input',()=>{ t=sl.value/60; scrubbing=true; });
+['pointerup','change','keyup'].forEach(ev=>sl.addEventListener(ev,()=>{ t=sl.value/60; scrubbing=false; }));
+chips.forEach(ch=>ch.addEventListener('click',()=>{ t=+ch.dataset.t; prevState=null; }));
+$('btnHow').addEventListener('click',()=>{ t=5; prevState=null; setPlaying(true); $('demo').scrollIntoView({behavior:RM?'auto':'smooth',block:'start'}); });
+
+/* keep state for viewers who already have the page open when it is republished */
+function start(saved){ if(saved&&typeof saved.t==='number'){ t=saved.t; if(typeof saved.playing==='boolean') setPlaying(saved.playing); } setPlaying(playing); last=performance.now(); render(0); requestAnimationFrame(frame); }
+try{ window.claude?.hot?.snapshot?.(()=>({t,playing})); }catch(e){}
+(window.claude?.hot?.ready) ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+})();
+</script>

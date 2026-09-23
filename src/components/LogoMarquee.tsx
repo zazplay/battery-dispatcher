@@ -31,7 +31,7 @@ const BRANDS: Brand[] = [
 const heightFor = (aspect = 4, scale = 1) => Math.round(Math.min(44, 62 / Math.sqrt(aspect)) * scale);
 
 function Mark({ name, file, aspect, scale, icon }: Brand) {
-  if (file) return <span className="brand-mark"><img src={`/logos/${file}`} alt={name} title={name} style={{ height: heightFor(aspect, scale) }} /></span>;
+  if (file) return <span className="brand-mark"><img src={`${import.meta.env.BASE_URL}logos/${file}`} alt={name} title={name} style={{ height: heightFor(aspect, scale) }} /></span>;
   return (
     <span className="brand-mark">
       {icon && <svg viewBox="0 0 24 24" aria-hidden="true"><path d={icon.path} fill={`#${icon.hex}`} /></svg>}

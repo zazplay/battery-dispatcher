@@ -76,11 +76,12 @@ h1.ai-line b { color: var(--blue); font-weight: 800; }
 .stage-err { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--muted); font-size: 14px; }
 .labels { position: absolute; inset: 0 60px 0 0; z-index: 2; pointer-events: none; }
 /* money card on the scene. No backdrop-filter: a blur composited over the WebGL canvas flickers on state changes */
-.hud { position: absolute; right: 24px; top: 24px; z-index: 3; display: grid; gap: 2px; min-width: 220px; padding: 14px 16px; background: rgba(255, 255, 255, 0.96); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+/* fixed width, so the card doesn't breathe as the line under the number changes with the mode */
+.hud { position: absolute; right: 24px; top: 24px; z-index: 3; display: grid; gap: 2px; width: 300px; padding: 14px 16px; background: rgba(255, 255, 255, 0.96); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
 .hud-label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .hud-money { font-size: 36px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--ink); }
 .hud-rate { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.hud-line { font-size: 12.5px; font-weight: 600; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--line); }
+.hud-line { font-size: 12.5px; line-height: 1.35; font-weight: 600; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--line); min-height: calc(8px + 2 * 1.35 * 12.5px); text-wrap: pretty; } /* room for two lines, so the height holds too */
 /* callout labels: a thin line rises from the object, the text hangs beside the top of the line */
 .lbl { position: absolute; left: 0; top: 0; will-change: transform; }
 .lbl::after { content: ""; position: absolute; left: -3px; bottom: -3px; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); box-shadow: 0 0 0 2px #fff; }
@@ -315,7 +316,7 @@ footer a { color: inherit; padding-block: 8px; }
   .hero-cta { padding: 4px 16px 20px; }
   .stage-wrap { height: 62vh; height: 62svh; min-height: 360px; align-self: auto; border-left: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
   .stage, .labels { inset: 0; }
-  .hud { right: 16px; top: 16px; min-width: 0; padding: 10px 12px; }
+  .hud { right: 16px; top: 16px; width: 250px; padding: 10px 12px; }
   .hud-money { font-size: 26px; }
   .lbl .val { font-size: 18px; }
   .lbl .val small { font-size: 12px; }

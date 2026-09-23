@@ -158,6 +158,28 @@ svg text { font-family: inherit; }
 .chart-card .zlabel { font-size: 15px; }
 .chart-card .mark { font-size: 16px; paint-order: stroke fill; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
 
+/* real market prices — dark block with three country tables */
+.sec.dark { background: var(--ink); color: #fff; margin-inline: -16px; padding-inline: 16px; }
+.sec.dark .eyebrow { color: #8fb0ff; }
+.sec.dark .sub { color: rgba(255, 255, 255, 0.72); }
+.markets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; }
+.market { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; }
+.market-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.market-head b { display: block; font-size: 17px; }
+.market-head span { display: block; font-size: 12.5px; color: rgba(255, 255, 255, 0.6); }
+.flag { width: 36px; height: 24px; border-radius: 5px; overflow: hidden; flex: none; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2); }
+.flag svg { width: 100%; height: 100%; display: block; }
+.market table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.market th, .market td { padding: 9px 0; border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: left; vertical-align: top; }
+.market th { font-weight: 500; color: rgba(255, 255, 255, 0.72); padding-right: 10px; }
+.market td { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 600; }
+.market td:last-child { text-align: right; color: rgba(255, 255, 255, 0.72); font-weight: 500; padding-left: 10px; }
+.market tr.low td:nth-child(2) { color: #4ade80; }
+.market tr.peak td:nth-child(2) { color: #8fb0ff; }
+.market-foot { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: auto; padding-top: 12px; font-size: 12px; color: rgba(255, 255, 255, 0.5); }
+.market-note { margin-top: 10px; font-size: 12.5px; line-height: 1.45; color: rgba(255, 255, 255, 0.6); }
+.fx { margin-top: 16px; font-size: 12.5px; color: rgba(255, 255, 255, 0.5); }
+
 /* how it works */
 .step { position: relative; }
 .step-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
@@ -277,6 +299,7 @@ footer a { color: inherit; padding-block: 8px; }
    ===================================================================== */
 @media (max-width: 1000px) {
   .two { grid-template-columns: 1fr; gap: 28px; }
+  .markets { grid-template-columns: 1fr; max-width: 640px; }
   .steps, .features { grid-template-columns: repeat(2, 1fr); }
   .step::after { display: none; }
 }
@@ -349,7 +372,10 @@ footer a { color: inherit; padding-block: 8px; }
   .marquee-row { height: 40px; }
   .brand-mark { margin-right: 32px; }
   .strip .wrap { padding-block: 16px; gap: 12px; }
-  .steps, .features, .tiles, .nums, .dash, .chat-card { margin-top: 24px; }
+  .steps, .features, .tiles, .nums, .dash, .chat-card, .markets { margin-top: 24px; }
+  .market { padding: 16px; }
+  .market table { font-size: 13px; }
+  .market td { white-space: normal; }
   .chart-card { padding: 12px 12px 8px; }
   .step, .feature, .tile, .num, .diag-item { padding: 16px; }
   .num b { font-size: 40px; }

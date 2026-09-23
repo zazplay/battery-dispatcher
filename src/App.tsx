@@ -2,6 +2,7 @@ import { Hero } from './components/Hero';
 import { LogoMarquee } from './components/LogoMarquee';
 import { AiMarquee } from './components/AiMarquee';
 import { Problem } from './components/sections/Problem';
+import { MarketPrices } from './components/sections/MarketPrices';
 import { HowItWorks } from './components/sections/HowItWorks';
 import { LiveDashboard } from './components/sections/LiveDashboard';
 import { Features } from './components/sections/Features';
@@ -21,6 +22,7 @@ export default function App() {
       <LogoMarquee />
       <AiMarquee />
       <Problem />
+      <MarketPrices />
       <HowItWorks />
       <LiveDashboard />
       <Features />

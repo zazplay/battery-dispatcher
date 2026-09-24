@@ -11,6 +11,9 @@ const M = (name: string, color: number, rough = 0.7, metal = 0, extra: THREE.Mes
   Object.assign(new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal, ...extra }), { name });
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 const UP = V(0, 1, 0);
+/** Severity colours of the diagnostics, shared by the 3D beacon and the DOM callouts. */
+export const SEV_COLOR = { crit: '#e5484d', warn: '#f59e0b', info: '#3b6cff', ok: '#16a34a' } as const;
+export type Sev = keyof typeof SEV_COLOR;
 
 export interface Flow {
   name: string;
@@ -19,9 +22,10 @@ export interface Flow {
   len: number;
   on: number;
   amt: number;
-  dashes: { m: THREE.Mesh; off: number }[];
+  dashes: { m: THREE.Object3D; off: number }[];
 }
 export type LabelId = 'grid' | 'bat' | 'ai' | 'pv';
+export type TargetId = 'unit3' | 'unit5' | 'row2' | 'pcs' | 'pylonB' | 'bess';
 export interface Site {
   root: THREE.Group;
   flows: Flow[];
@@ -36,6 +40,10 @@ export interface Site {
   anchors: Record<LabelId, THREE.Vector3>;
   /** Bounds of the objects that matter (pylons, batteries, solar rows) — used to frame the scene tighter on phones. */
   coreBox: THREE.Box3;
+  /** Objects the diagnostics can point at. */
+  targets: Record<TargetId, THREE.Object3D>;
+  /** Pulsing marker (ring on the ground + bobbing pin) that the diagnostics place over a faulty object. */
+  beacon: { group: THREE.Group; ring: THREE.Mesh; pin: THREE.Mesh; mat: THREE.MeshBasicMaterial };
 }
 
 export function buildSite(): Site {
@@ -283,22 +291,57 @@ export function buildSite(): Site {
     add(net, `overhead_line_${k}`, new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(a, mid, b), 48, 0.05, 6, false), mat.steel, 0, 0, 0, false);
   });
 
-  // ---------- Animation helpers: energy pulses, AI signal rings, fans ----------
+  // ---------- Animation helpers: energy orbs, AI signal rings, fans, alert beacon ----------
   const fx = new THREE.Group();
   fx.name = 'energy_flow_fx';
   root.add(fx);
-  const dashGeo = new THREE.CapsuleGeometry(0.2, 2.2, 6, 12);
+  // energy pulses: a glowing yellow orb with a soft halo and a lightning-bolt sprite (the second mockup's look)
+  const orbGeo = new THREE.SphereGeometry(1.0, 24, 16);
+  const orbMat = M('energy_orb', 0xfacc15, 0.3, 0, { emissive: 0xf5b301, emissiveIntensity: 0.9 });
+  const boltTex = (() => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d')!;
+    g.translate(64, 64);
+    g.beginPath();
+    ([[10, -52], [-26, 6], [-2, 6], [-12, 52], [26, -10], [2, -10], [10, -52]] as [number, number][]).forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+    g.closePath();
+    g.lineJoin = 'round';
+    g.lineWidth = 8;
+    g.strokeStyle = '#b45309';
+    g.stroke();
+    g.fillStyle = '#ffffff';
+    g.fill();
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
+    return t;
+  })();
+  // depthTest on (unlike the mockup) so a bolt behind a solar row is hidden by it; no depth write + alphaTest so its transparent corners don't cut holes in the halo
+  const boltMat = new THREE.SpriteMaterial({ map: boltTex, depthTest: true, depthWrite: false, alphaTest: 0.2, transparent: true });
+  const haloMat = new THREE.MeshBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0.3, depthWrite: false });
+  const haloGeo = new THREE.SphereGeometry(1.45, 20, 14);
+  const noShadow = (o: THREE.Object3D) => { o.castShadow = false; o.receiveShadow = false; o.userData.noShadow = true; };
   flows.forEach((f) => {
-    const n = Math.max(3, Math.round(f.len / 7));
+    const n = Math.max(2, Math.round(f.len / 11));
     for (let k = 0; k < n; k++) {
-      const m = new THREE.Mesh(dashGeo, f.mat);
-      m.name = 'energy_dash';
-      m.castShadow = false;
-      m.userData.noShadow = true; // effects never cast shadows — moving shadows flicker on mode changes
+      const m = new THREE.Group();
+      m.name = 'energy_orb';
+      const core = new THREE.Mesh(orbGeo, orbMat); core.name = 'orb_core'; noShadow(core); m.add(core);
+      const halo = new THREE.Mesh(haloGeo, haloMat); halo.name = 'orb_halo'; noShadow(halo); m.add(halo);
+      const bolt = new THREE.Sprite(boltMat); bolt.name = 'orb_bolt'; bolt.scale.set(1.7, 1.7, 1); bolt.renderOrder = 10; m.add(bolt);
       fx.add(m);
       f.dashes.push({ m, off: k / n });
     }
   });
+  // alert beacon: red ring on the ground + a pin bobbing above the object; hidden until the diagnostics use it
+  const beaconMat = new THREE.MeshBasicMaterial({ color: 0xe5484d, transparent: true, opacity: 0.8, depthWrite: false });
+  const beaconGroup = new THREE.Group();
+  beaconGroup.name = 'alert_beacon';
+  beaconGroup.visible = false;
+  fx.add(beaconGroup);
+  const bRing = new THREE.Mesh(new THREE.TorusGeometry(1, 0.12, 8, 48), beaconMat); bRing.rotation.x = Math.PI / 2; noShadow(bRing); beaconGroup.add(bRing);
+  const bPin = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 12), beaconMat); noShadow(bPin); beaconGroup.add(bPin);
   const waves = [0, 1, 2].map((k) => {
     const wm = aiMat.clone();
     wm.transparent = true;
@@ -333,6 +376,15 @@ export function buildSite(): Site {
       pv: W(rows[1], 9, 4, 0), // right part of the second row, so the label stays clear of the AI / battery callouts
     },
     coreBox,
+    targets: {
+      unit3: bess.getObjectByName('battery_unit_3')!,
+      unit5: bess.getObjectByName('battery_unit_5')!,
+      row2: rows[1],
+      pcs,
+      pylonB: pB,
+      bess,
+    },
+    beacon: { group: beaconGroup, ring: bRing, pin: bPin, mat: beaconMat },
   };
 }
 
@@ -354,13 +406,12 @@ export function animateSite(site: Site, s: Snapshot) {
   site.flows.forEach((f) => {
     f.amt += (f.on - f.amt) * Math.min(1, dt * 4);
     f.dashes.forEach((p) => {
-      const u = (p.off + (t * 8) / f.len) % 1;
-      const pos = f.curve.getPointAt(u), tan = f.curve.getTangentAt(u);
-      p.m.position.set(pos.x, 0.52, pos.z);
-      p.m.quaternion.setFromUnitVectors(UP, tan.normalize());
+      const u = (p.off + (t * 6) / f.len) % 1;
+      const pos = f.curve.getPointAt(u);
+      p.m.position.set(pos.x, 0.6, pos.z);
       const fade = Math.min(1, u * 12, (1 - u) * 12) * f.amt;
       p.m.visible = fade > 0.02;
-      p.m.scale.set(fade, fade, fade);
+      p.m.scale.setScalar(fade * (1 + 0.06 * Math.sin(t * 8 + p.off * 30)));
     });
   });
   site.fans.forEach((fn) => { fn.rotation.x = t * 6; });

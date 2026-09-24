@@ -33,6 +33,15 @@ export const pl: Dict = {
     storingAt: (p, tag) => `Magazynuje energię słoneczną po ${p} — ${tag}`,
     holding: (p, tag) => `Czeka — ${p} to ${tag}`,
   },
+  aiNote: 'Notatka AI',
+  sceneAlerts: [
+    { title: 'Rząd 2 produkuje mniej', note: 'Rząd 2 jest 12 % poniżej prognozy — zaplanowano czyszczenie.' },
+    { title: 'Zapad napięcia sieci · 0,91 pu', note: 'Zapad napięcia w sieci — eksport ograniczony do 400 kW do czasu powrotu.' },
+    { title: 'Niskie napięcie ogniw · Jednostka 3', note: 'Niskie napięcie ogniw w jednostce 3 — rack odizolowany, trwa balansowanie.' },
+    { title: 'Wysoka temperatura · Jednostka 5', note: 'Jednostka 5 ma 47 °C — chłodzenie zwiększone, ładowanie spowolnione.' },
+    { title: 'Prognoza skoku ceny', note: 'Szczyt ceny o 19:00 — sprzedaż 18:00–21:00.' },
+    { title: 'Wszystko w normie', note: 'Wszystkie problemy rozwiązane. Raport dzienny wysłany.' },
+  ],
   modes: { charge: 'Ładowanie', sell: 'Sprzedaż', hold: 'Oczekiwanie' },
   tags: {
     top: (n) => `najdroższe ${n} % dnia`,

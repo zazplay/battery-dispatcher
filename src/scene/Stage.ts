@@ -32,6 +32,8 @@ export class Stage {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; // the second mockup's softer, filmic look
+    renderer.toneMappingExposure = 1.05;
     container.appendChild(renderer.domElement);
     this.renderer = renderer;
 

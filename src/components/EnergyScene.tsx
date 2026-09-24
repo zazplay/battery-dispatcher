@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Stage, isPhone } from '../scene/Stage';
 import { buildSite, animateSite, type LabelId } from '../scene/buildSite';
+import { AlertDirector } from '../scene/alerts';
 import { simStore } from '../sim/store';
 import { useSim } from '../sim/useSim';
 import { fmt, MODE_COLOR, priceTag } from '../sim/day';
@@ -38,6 +39,7 @@ function MoneyHud() {
 export function EnergyScene() {
   const hostRef = useRef<HTMLDivElement>(null);
   const labelsRef = useRef<HTMLDivElement>(null);
+  const calloutsRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const layoutRef = useRef<(() => void) | null>(null);
   const { t } = useT();
@@ -45,7 +47,8 @@ export function EnergyScene() {
   useEffect(() => {
     const host = hostRef.current;
     const layer = labelsRef.current;
-    if (!host || !layer) return;
+    const coLayer = calloutsRef.current;
+    if (!host || !layer || !coLayer) return;
     let stage: Stage;
     try {
       stage = new Stage(host);
@@ -58,6 +61,7 @@ export function EnergyScene() {
     // desktop: the whole site a little below centre (the canvas stops short of the right edge, see .stage in styles.css);
     // phones: frame only the core objects so the scene fills the small box
     stage.setObject(site.root, { shiftY: 0.12, phoneBox: site.coreBox });
+    const alerts = new AlertDirector(site, coLayer);
 
     const nodes = LABELS.map((def) => {
       const el = layer.querySelector<HTMLDivElement>(`[data-id="${def.id}"]`)!;
@@ -127,6 +131,7 @@ export function EnergyScene() {
       animateSite(site, s);
       const w = host.clientWidth, h = host.clientHeight;
       const phone = isPhone();
+      alerts.update(s.hr, s.t, stage.camera, w, h, d);
       for (const n of nodes) {
         const p = n.at.clone().project(stage.camera);
         const visible = p.z < 1 && p.z > -1;
@@ -162,6 +167,7 @@ export function EnergyScene() {
     return () => {
       clearTimeout(fontsReady);
       layoutRef.current = null;
+      alerts.dispose();
       stage.dispose();
     };
   }, []);
@@ -190,6 +196,7 @@ export function EnergyScene() {
           </div>
         ))}
       </div>
+      <div className="callouts" ref={calloutsRef} aria-hidden="true" />
       <MoneyHud />
       {error && <div className="stage-err">{error}</div>}
     </div>

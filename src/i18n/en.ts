@@ -32,6 +32,16 @@ export const en = {
     storingAt: (p: string, tag: string) => `Storing solar at ${p} — ${tag}`,
     holding: (p: string, tag: string) => `Holding — ${p} is ${tag}`,
   },
+  aiNote: 'AI note',
+  /* diagnostics the AI raises on the 3D scene during the day — same order as SCHEDULE in scene/alerts.ts */
+  sceneAlerts: [
+    { title: 'Solar row 2 underperforming', note: 'Row 2 is 12 % below forecast — cleaning scheduled.' },
+    { title: 'Grid voltage sag · 0.91 pu', note: 'Grid voltage sag — export capped at 400 kW until it recovers.' },
+    { title: 'Low cell voltage · Unit 3', note: 'Low cell voltage in unit 3 — rack isolated, balancing cells.' },
+    { title: 'High temperature · Unit 5', note: 'Unit 5 at 47 °C — cooling up, charging slowed.' },
+    { title: 'Price spike forecast', note: 'Price peak at 19:00 — selling 18:00–21:00.' },
+    { title: 'All systems normal', note: 'All issues resolved. Daily report sent.' },
+  ],
   modes: { charge: 'Charging', sell: 'Selling', hold: 'Waiting' },
   tags: {
     top: (n: number) => `top ${n} % of the day`,

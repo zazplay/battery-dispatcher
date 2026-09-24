@@ -33,6 +33,15 @@ export const cs: Dict = {
     storingAt: (p, tag) => `Ukládá solární energii za ${p} — ${tag}`,
     holding: (p, tag) => `Drží — ${p} je ${tag}`,
   },
+  aiNote: 'Poznámka AI',
+  sceneAlerts: [
+    { title: 'Řada 2 vyrábí méně', note: 'Řada 2 je 12 % pod předpovědí — naplánováno čištění.' },
+    { title: 'Pokles napětí sítě · 0,91 pu', note: 'Pokles napětí v síti — export omezen na 400 kW, dokud se nevrátí.' },
+    { title: 'Nízké napětí článků · Jednotka 3', note: 'Nízké napětí článků v jednotce 3 — rack odpojen, články se balancují.' },
+    { title: 'Vysoká teplota · Jednotka 5', note: 'Jednotka 5 má 47 °C — chlazení zvýšeno, nabíjení zpomaleno.' },
+    { title: 'Předpověď cenové špičky', note: 'Špička ceny v 19:00 — prodej 18:00–21:00.' },
+    { title: 'Vše v normálu', note: 'Všechny problémy vyřešeny. Denní report odeslán.' },
+  ],
   modes: { charge: 'Nabíjí', sell: 'Prodává', hold: 'Čeká' },
   tags: {
     top: (n) => `horních ${n} % dne`,

@@ -30,12 +30,13 @@ export function DayChart({ width, height, top, bottom, strokeWidth = 1.6, ticks,
 
   const { path, zones } = useMemo(() => {
     const path = PTS.map((p, i) => (i ? 'L' : 'M') + x(i / 4).toFixed(1) + ' ' + y(p).toFixed(1)).join(' ');
+    // zones at 5-minute steps, so their edges sit where the simulation actually switches (not on the quarter hour)
     const zones: { from: number; to: number; mode: Mode }[] = [];
     let cur: Mode | null = null;
     let start = 0;
-    for (let i = 0; i <= 96; i++) {
-      const hr = i / 4;
-      const m = i < 96 ? plan(hr) : null;
+    for (let i = 0; i <= 288; i++) {
+      const hr = i / 12;
+      const m = i < 288 ? plan(hr) : null;
       if (m !== cur) {
         if (cur) zones.push({ from: start, to: hr, mode: cur });
         cur = m;

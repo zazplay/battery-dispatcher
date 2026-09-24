@@ -15,6 +15,7 @@ export const cs: Dict = {
     badge: 'AI dispečer baterií',
     title: '**AI** prodává energii z vaší baterie za nejlepší cenu dne — a nabíjí, když je elektřina nejlevnější. Automaticky, 24/7.',
     how: 'Jak to funguje',
+    order: 'Objednat systém',
     facts: '1 MWp FVE · 2,4 MWh baterie · 1,2 MW střídač',
     dayNote: 'celý den zhruba za minutu',
   },

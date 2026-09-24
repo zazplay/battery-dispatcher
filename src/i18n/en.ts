@@ -14,6 +14,7 @@ export const en = {
     badge: 'AI battery dispatcher',
     title: "**AI** sells your battery's energy at the best price of the day — and charges when it's cheapest. Automatically, 24/7.",
     how: 'See how it works',
+    order: 'Order the system',
     facts: '1 MWp solar · 2.4 MWh batteries · 1.2 MW inverter',
     dayNote: 'one day in about a minute',
   },

@@ -7,6 +7,7 @@ import { HowItWorks } from './components/sections/HowItWorks';
 import { LiveDashboard } from './components/sections/LiveDashboard';
 import { Features } from './components/sections/Features';
 import { Diagnostics } from './components/sections/Diagnostics';
+import { AlertsJournal } from './components/sections/AlertsJournal';
 import { AiChat } from './components/sections/AiChat';
 import { Tech } from './components/sections/Tech';
 import { Results } from './components/sections/Results';
@@ -27,6 +28,7 @@ export default function App() {
       <LiveDashboard />
       <Features />
       <Diagnostics />
+      <AlertsJournal />
       <AiChat />
       <Tech />
       <Results />

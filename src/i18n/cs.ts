@@ -188,6 +188,7 @@ export const cs: Dict = {
     input: 'Zeptejte se na svou elektrárnu…',
   },
   marquee: { label: 'Funguje se zařízením, které už provozujete' },
+  marqueeAi: { label: 'Běží na AI modelech s veřejným API' },
   tech: {
     eyebrow: 'Technologie',
     title: 'Dongle, brána nebo cloud — čteme a řídíme to, co máte.',

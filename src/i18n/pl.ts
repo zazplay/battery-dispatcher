@@ -188,6 +188,7 @@ export const pl: Dict = {
     input: 'Zapytaj o swoją instalację…',
   },
   marquee: { label: 'Działa ze sprzętem, który już masz' },
+  marqueeAi: { label: 'Działa na modelach AI z publicznym API' },
   tech: {
     eyebrow: 'Technologia',
     title: 'Dongle, bramka lub chmura — odczytujemy i sterujemy tym, co masz.',

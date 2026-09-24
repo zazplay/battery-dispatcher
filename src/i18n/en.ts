@@ -193,6 +193,7 @@ export const en = {
     input: 'Ask about your site…',
   },
   marquee: { label: 'Works with the equipment you already run' },
+  marqueeAi: { label: 'Runs on AI models with a public API' },
   tech: {
     eyebrow: 'Technology',
     title: 'Dongle, gateway or cloud — we read and control what you have.',

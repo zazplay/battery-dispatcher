@@ -59,7 +59,6 @@ export function DayChart({ width, height, top, bottom, strokeWidth = 1.6, ticks,
             width={x(z.to) - x(z.from)}
             y={top - 8}
             height={bottom - top + 12}
-            rx={4}
             fill={z.mode === 'sell' ? '#3b6cff' : '#16a34a'}
             fillOpacity={0.14}
           />

@@ -1,5 +1,6 @@
 import { Hero } from './components/Hero';
 import { LogoMarquee } from './components/LogoMarquee';
+import { AiMarquee } from './components/AiMarquee';
 import { Problem } from './components/sections/Problem';
 import { MarketPrices } from './components/sections/MarketPrices';
 import { HowItWorks } from './components/sections/HowItWorks';
@@ -20,6 +21,7 @@ export default function App() {
     <>
       <Hero />
       <LogoMarquee />
+      <AiMarquee />
       <Problem />
       <MarketPrices />
       <HowItWorks />

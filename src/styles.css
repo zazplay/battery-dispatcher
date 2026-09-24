@@ -47,16 +47,24 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
    Hero: text + dispatcher panel on the left, the 3D scene on the right
    ===================================================================== */
 .hero { margin-inline: -16px; display: grid; grid-template-columns: 380px 1fr; grid-template-rows: auto 1fr auto; grid-template-areas: "card stage" "cta stage" "panel stage"; min-height: 100vh; min-height: 100svh; background: var(--bg); }
-.hero-card { grid-area: card; align-self: start; padding: 24px 24px 0 28px; }
+.hero-card { grid-area: card; align-self: start; padding: 24px 20px 0 28px; }
 .hero-cta { grid-area: cta; align-self: start; padding: 20px 24px 0 28px; }
-.hero-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* brand left, language switcher right; the switcher wraps under the brand rather than run past the column (380 px on desktop) */
+.hero-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 10px; }
 .brand { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 16px; color: var(--ink); }
 .brand svg { width: 24px; height: 24px; }
-.lang { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--bg2); border: 1px solid var(--line); }
-.lang button { font: inherit; font-size: 12px; line-height: 1.2; font-weight: 700; letter-spacing: 0.04em; padding: 5px 10px; min-width: 38px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); cursor: pointer; transition: color 0.15s, background-color 0.15s, box-shadow 0.15s; }
+.lang { display: flex; gap: 2px; margin-left: auto; padding: 3px; border-radius: 999px; background: var(--bg2); border: 1px solid var(--line); }
+.lang button { display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 12px; line-height: 1.2; font-weight: 700; letter-spacing: 0.02em; padding: 5px 8px 5px 7px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); cursor: pointer; transition: color 0.15s, background-color 0.15s, box-shadow 0.15s; }
 .lang button:hover:not(.on) { color: var(--ink); }
 .lang button:focus-visible { outline-width: 2px; outline-offset: -2px; }
 .lang button.on { background: var(--card); color: var(--blue); box-shadow: 0 1px 3px rgba(30, 50, 90, 0.12); }
+.lang button:not(.on) .flag { opacity: 0.75; }
+.lang button:hover .flag { opacity: 1; }
+
+/* inline flags (see components/Flag.tsx): large on the dark market cards, small in the language switcher */
+.flag { width: 36px; height: 24px; border-radius: 5px; overflow: hidden; flex: none; display: block; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2); }
+.flag svg { width: 100%; height: 100%; display: block; }
+.flag.sm { width: 16px; height: 11px; border-radius: 2px; box-shadow: 0 0 0 1px rgba(20, 30, 50, 0.12); transition: opacity 0.15s; }
 .ai-badge { display: inline-flex; align-items: center; gap: 10px; margin-top: 24px; line-height: 1.2; padding: 5px 14px 5px 6px; border-radius: 999px; background: var(--blue); color: #fff; font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
 .ai-logos { display: inline-flex; }
 .ai-logo { width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 2px solid var(--blue); display: grid; place-items: center; margin-right: -8px; }
@@ -184,8 +192,6 @@ svg text { font-family: inherit; }
 .market-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .market-head b { display: block; font-size: 17px; }
 .market-head span { display: block; font-size: 12.5px; color: rgba(255, 255, 255, 0.6); }
-.flag { width: 36px; height: 24px; border-radius: 5px; overflow: hidden; flex: none; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2); }
-.flag svg { width: 100%; height: 100%; display: block; }
 .market table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .market th, .market td { padding: 9px 0; border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: left; vertical-align: top; }
 .market th { font-weight: 500; color: rgba(255, 255, 255, 0.72); padding-right: 10px; }
@@ -402,7 +408,7 @@ footer a { color: inherit; padding-block: 8px; }
   .hero-card { padding: 16px 16px 12px; }
   .hero-top { margin-bottom: 4px; }
   .brand { font-size: 15px; }
-  .lang button { padding: 8px 11px; line-height: 1.35; }
+  .lang button { padding: 8px 9px 8px 7px; line-height: 1.35; }
   .ai-badge { margin-top: 16px; }
   h1.ai-line { font-size: 19px; margin-top: 12px; max-width: none; }
   .hero-cta { padding: 12px 16px 24px; }

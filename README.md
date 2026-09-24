@@ -30,6 +30,7 @@ src/
     Reveal.tsx          плавное появление блоков при прокрутке
     LogoMarquee.tsx     бегущая лента производителей под первым экраном (simple-icons + текстовые марки)
     AiLogos.tsx         знаки OpenAI / Claude / Gemini в бейдже первого экрана
+    Flag.tsx            маленькие SVG-флаги (GB / CZ / PL / UA) — переключатель языков и карточки цен
     sections/           Strip, Problem, HowItWorks, LiveDashboard, Features, Diagnostics (AI-диагностика),
                         AiChat, Tech (донглы, шлюз, протоколы), Results, Turnkey (+ карточка «приедем на объект»),
                         Contact (карточка с контактами, без формы), Footer

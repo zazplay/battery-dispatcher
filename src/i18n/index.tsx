@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, Fragment, type ReactNode } from 'react';
+import { Flag, type Country } from '../components/Flag';
 import { en, type Dict } from './en';
 import { cs } from './cs';
 import { pl } from './pl';
@@ -55,8 +56,10 @@ export function Rich({ text }: { text: string }) {
   return <>{parts.map((p, i) => (i % 2 ? <b key={i}>{p}</b> : <Fragment key={i}>{p}</Fragment>))}</>;
 }
 
-/* What the switcher shows. The internal code stays the ISO one ("uk" — used for <html lang>), the button says "UA". */
-const SHORT: Record<Lang, string> = { en: 'EN', cs: 'CS', pl: 'PL', uk: 'UA' };
+/* What the switcher shows: a flag and a country-style code people recognise. The internal codes stay the ISO
+   language ones ("cs", "uk" — used for <html lang>), the buttons say "CZ" and "UA". */
+const SHORT: Record<Lang, string> = { en: 'EN', cs: 'CZ', pl: 'PL', uk: 'UA' };
+const FLAG: Record<Lang, Country> = { en: 'gb', cs: 'cz', pl: 'pl', uk: 'ua' };
 
 export function LangSwitch() {
   const { lang, setLang } = useT();
@@ -64,6 +67,7 @@ export function LangSwitch() {
     <div className="lang" role="group" aria-label="Language">
       {LANGS.map((l) => (
         <button key={l} type="button" className={l === lang ? 'on' : ''} aria-pressed={l === lang} onClick={() => setLang(l)}>
+          <Flag of={FLAG[l]} className="sm" />
           {SHORT[l]}
         </button>
       ))}

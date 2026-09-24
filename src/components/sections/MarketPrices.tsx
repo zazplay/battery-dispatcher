@@ -1,22 +1,10 @@
-import type { ReactNode } from 'react';
 import { Reveal } from '../Reveal';
+import { Flag } from '../Flag';
 import { useT } from '../../i18n';
 
 /* Real day-ahead figures for the three markets, collected 23 Sep 2026:
    CZ — OTE day-ahead (euenergy.live), PL — TGE RDN / PSE RCE (nexbe.pl, TGE), UA — Оператор ринку indexes via ExPro, NEURC cap.
    FX used for the € column: 4.37 PLN/€, 51.3 UAH/€. */
-
-const FLAGS: Record<'cz' | 'pl' | 'ua', ReactNode> = {
-  cz: (
-    <svg viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="8" fill="#fff" /><rect y="8" width="24" height="8" fill="#d7141a" /><path d="M0 0l12 8-12 8z" fill="#11457e" /></svg>
-  ),
-  pl: (
-    <svg viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="8" fill="#fff" /><rect y="8" width="24" height="8" fill="#dc143c" /></svg>
-  ),
-  ua: (
-    <svg viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="8" fill="#0057b7" /><rect y="8" width="24" height="8" fill="#ffd700" /></svg>
-  ),
-};
 
 type Row = { label: string; local: string; eur: string; tone?: 'low' | 'peak' };
 
@@ -85,7 +73,7 @@ export function MarketPrices() {
             {markets.map((m) => (
               <div className="market" key={m.id}>
                 <div className="market-head">
-                  <span className="flag">{FLAGS[m.id]}</span>
+                  <Flag of={m.id} />
                   <div>
                     <b>{p.countries[m.id]}</b>
                     <span>{m.market}</span>

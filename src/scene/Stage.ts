@@ -3,7 +3,8 @@ import * as THREE from 'three';
 /* Renderer + camera + studio lighting for the site model. Ported from the mockup's <three-d-stage>:
    the camera is auto-framed to the object's bounds and stays static (no orbit) unless enableOrbit() is called. */
 
-const VIEW_DIR = new THREE.Vector3(1, 0.55, 1.25).normalize();
+/** Direction from the scene towards the (static) camera; buildSite offsets the bolt sprites along it. */
+export const VIEW_DIR = new THREE.Vector3(1, 0.55, 1.25).normalize();
 /** Same breakpoint as the phone layout in styles.css. */
 export const isPhone = () => window.innerWidth <= 700;
 

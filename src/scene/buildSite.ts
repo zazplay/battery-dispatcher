@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Snapshot } from '../sim/day';
+import { VIEW_DIR } from './Stage';
 
 /* The energy site model from the original Claude Design mockup: solar arrays, six battery containers,
    PCS + AI controller cabinet, two pylons with overhead lines, buried cables with energy pulses. */
@@ -329,7 +330,9 @@ export function buildSite(): Site {
       m.name = 'energy_orb';
       const core = new THREE.Mesh(orbGeo, orbMat); core.name = 'orb_core'; noShadow(core); m.add(core);
       const halo = new THREE.Mesh(haloGeo, haloMat); halo.name = 'orb_halo'; noShadow(halo); m.add(halo);
-      const bolt = new THREE.Sprite(boltMat); bolt.name = 'orb_bolt'; bolt.scale.set(1.7, 1.7, 1); bolt.renderOrder = 10; m.add(bolt);
+      const bolt = new THREE.Sprite(boltMat); bolt.name = 'orb_bolt'; bolt.scale.set(1.7, 1.7, 1); bolt.renderOrder = 10;
+      bolt.position.copy(VIEW_DIR).multiplyScalar(1.6); // in front of the orb as seen from the camera, so the depth test passes against the orb but not against a panel
+      m.add(bolt);
       fx.add(m);
       f.dashes.push({ m, off: k / n });
     }

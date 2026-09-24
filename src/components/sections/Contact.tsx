@@ -1,5 +1,6 @@
 import { Phone, Mail, Globe, User } from 'lucide-react';
 import { Rich, useT } from '../../i18n';
+import { EMAIL, PHONE, mailto } from '../../company';
 
 /** Closing card of the pitch page: who we are, one ask, the contacts as plain text. */
 export function Contact() {
@@ -17,11 +18,12 @@ export function Contact() {
           <div className="cta-side">
             <div className="cinfo">
               <span><User aria-hidden="true" /><span><b>Yehor Zhyliaiev</b>, {t.contact.role}</span></span>
-              <span><Phone aria-hidden="true" /><b>+420 774 903 190</b></span>
-              <span><Mail aria-hidden="true" /><b>yz@azileon.cz</b></span>
+              <span><Phone aria-hidden="true" /><b>{PHONE}</b></span>
+              <span><Mail aria-hidden="true" /><b>{EMAIL}</b></span>
               <span><Globe aria-hidden="true" /><a href="https://azileon.cz" target="_blank" rel="noreferrer">azileon.cz</a></span>
             </div>
-            <a className="btn pri" href="mailto:yz@azileon.cz?subject=Battery%20dispatcher%20demo">{t.contact.write}</a>
+            {/* the mail opens with the estimate template already in the body */}
+            <a className="btn pri" href={mailto(t)}>{t.contact.write}</a>
           </div>
         </div>
       </div>

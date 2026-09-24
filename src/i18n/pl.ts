@@ -1,7 +1,9 @@
 import type { Dict } from './en';
+import { DAY, buyT } from '../sim/day';
 
 const fmt = (n: number) => n.toLocaleString('pl-PL', { maximumFractionDigits: 0 });
 const dec = (p: number) => p.toFixed(3).replace('.', ',');
+const mwh = (n: number) => n.toFixed(1).replace('.', ',');
 
 export const pl: Dict = {
   code: 'pl',
@@ -16,8 +18,8 @@ export const pl: Dict = {
     badge: 'Dyspozytor AI dla baterii',
     title: '**AI** sprzedaje energię z Twojej baterii po najlepszej cenie dnia — i ładuje, gdy prąd jest najtańszy. Automatycznie, 24/7.',
     how: 'Jak to działa',
-    order: 'Zamów system',
-    facts: '1 MWp PV · 2,4 MWh magazynu · 1,2 MW falownik',
+    order: 'Oblicz przychód',
+    facts: '1 MWp PV · 2,4 MWh magazynu · 1 MW przyłącza',
     dayNote: 'cały dzień w około minutę',
   },
   scene: {
@@ -40,7 +42,7 @@ export const pl: Dict = {
     { title: 'Zapad napięcia w sieci · 0,91 pu', note: 'Zapad napięcia w sieci — eksport ograniczony do 400 kW, aż napięcie wróci do normy.' },
     { title: 'Niskie napięcie ogniw · Bateria 3', note: 'Niskie napięcie ogniw w baterii 3 — balansowanie uruchomione. Jeśli się powtórzy, sprawdź rack.' },
     { title: 'Wysoka temperatura · Bateria 5', note: 'Bateria 5 ma 47 °C — ładowanie spowolnione, sprawdź chłodzenie.' },
-    { title: 'Zbliża się szczyt cenowy', note: 'Szczyt ceny o 19:00 — sprzedajemy 18:00–21:00.' },
+    { title: 'Zbliża się szczyt cenowy', note: `Szczyt ceny o ${DAY.peakClock} — sprzedajemy ${DAY.sellFrom}–${DAY.sellTo}.` },
     { title: 'Wszystko w normie', note: 'Wszystko rozwiązane. Raport dzienny wysłany.' },
   ],
   modes: { charge: 'Ładowanie', sell: 'Sprzedaż', hold: 'Oczekiwanie' },
@@ -52,8 +54,9 @@ export const pl: Dict = {
   },
   reason: {
     sell: (p, tag, rate) => `Sprzedaje po ${p} — ${tag}. Baterie oddają energię do sieci, +${fmt(rate)} € na godzinę.`,
-    charge: (p, tag) => `Magazynuje energię z PV przy ${p} — ${tag}. Sprzeda ją w wieczornym szczycie.`,
-    hold: (p, tag) => `Czeka: ${p} to ${tag}. Trzyma energię na lepszą cenę.`,
+    charge: (p, tag, next, nextPrice) => `Magazynuje energię z PV przy ${p} — ${tag}. Następna sprzedaż o ${next} od ${nextPrice}.`,
+    hold: (p, tag, next, nextPrice) => `Czeka: ${p} to ${tag}. Następna sprzedaż o ${next} od ${nextPrice}.`,
+    empty: (p, tag) => `Magazyn na rezerwie 8 %. ${p} to ${tag}, ale nie ma już czego sprzedać.`,
   },
   panel: { title: 'Dyspozytor AI dla baterii', charges: 'AI ładuje', sells: 'AI sprzedaje', price: 'cena energii' },
 
@@ -65,9 +68,10 @@ export const pl: Dict = {
   ],
   prices: {
     eyebrow: 'Realne ceny rynkowe',
-    title: 'Ile dziś płaci rynek.',
+    title: 'Ile rynek płacił 23.09.2026.',
     sub: 'Ceny rynku dnia następnego w trzech krajach, w których działamy. Różnica między południem a wieczornym szczytem to pieniądze, które zarabia bateria.',
     countries: { cz: 'Czechy', pl: 'Polska', ua: 'Ukraina' },
+    morningPeak: 'Szczyt poranny',
     noonLow: 'Minimum w południe',
     eveningPeak: 'Szczyt wieczorny',
     dayAvg: 'Średnia dzienna',
@@ -76,7 +80,6 @@ export const pl: Dict = {
     base: 'Indeks BASE',
     peakOff: 'PEAK / OFF-PEAK',
     cap: 'Cena maksymalna',
-    spreadPeak: 'Szczyt / poza szczytem',
     source: 'Źródło',
     asOf: 'stan na',
     fx: 'Przeliczono po kursie 4,37 PLN i 51,3 UAH za euro (23.09.2026).',
@@ -93,6 +96,7 @@ export const pl: Dict = {
     markPeak: '19:30 · 0,17 € / kWh',
     zoneCharge: 'ładowanie',
     zoneSell: 'sprzedaż',
+    note: 'Dzień modelowy — ten sam, który odtwarza scena powyżej. Rzeczywiste ceny z 23.09.2026 są w następnej sekcji.',
   },
   how: {
     eyebrow: 'Jak to działa',
@@ -151,13 +155,15 @@ export const pl: Dict = {
     journalTitle: 'Dziennik · dziś',
     journal: [
       ['06:10', 'Poranny autotest: izolacja 2,1 MΩ, wszystkie falowniki OK', 'ok'],
+      [DAY.chargeFrom, `Cena poniżej ${dec(buyT)} €/kWh — energia z PV trafia teraz do magazynu`, 'ok'],
       ['10:42', 'String 7 na falowniku 3: 612 V, o 12 % mniej niż sąsiednie → alert do technika (Telegram)', 'alert'],
       ['11:15', 'Technik: cień od dźwigu na obiekcie, bez działań — kontrola o 14:00', 'note'],
-      ['12:30', 'Rack 2: ogniwa niezbalansowane — balansowanie uruchomione automatycznie', 'ok'],
-      ['13:05', 'Ładowanie z sieci po −4 €/MWh, bateria pełna o 15:00', 'ok'],
-      ['17:45', 'Start sprzedaży po 0,176 €/kWh', 'ok'],
-      ['19:30', 'Szczyt 0,311 €/kWh — limit eksportu zachowany', 'ok'],
-      ['21:10', 'Raport dzienny wysłany e-mailem: +355 €, sprzedano 1,6 MWh', 'mail'],
+      [DAY.fullClock, 'Magazyn pełny z PV — czekamy na wieczorny szczyt', 'ok'],
+      ['14:10', 'Rack 2: ogniwa niezbalansowane — balansowanie uruchomione automatycznie', 'ok'],
+      [DAY.sellFrom, `Start sprzedaży po ${dec(DAY.sellFromPrice)} €/kWh`, 'ok'],
+      [DAY.peakClock, `Szczyt ${dec(DAY.peakPrice)} €/kWh — eksport utrzymany na limicie przyłącza 1 MW`, 'ok'],
+      [DAY.sellTo, 'Magazyn na rezerwie 8 % — sprzedaż zatrzymana', 'ok'],
+      ['21:40', `Raport dzienny wysłany e-mailem: +${fmt(DAY.revenue)} €, sprzedano ${mwh(DAY.soldMWh)} MWh`, 'mail'],
     ],
     notePlaceholder: 'Dodaj notatkę dla zespołu…',
     noteHint: 'Notatki zostają przy obiekcie i trafiają do raportu miesięcznego.',
@@ -169,8 +175,8 @@ export const pl: Dict = {
     status: 'online · obserwuje Kolín — Farma Jih',
     owner: 'Właściciel',
     messages: [
-      'Dlaczego dziś o wpół do dziesiątej przestaliśmy sprzedawać?',
-      'O 9:30 cena spadła poniżej **0,12 €/kWh** i zaczęło świecić słońce. Od tej chwili bardziej opłaca się magazynować darmową energię z PV, niż sprzedawać ją za grosze. Znów sprzedawaliśmy od około 17:45, nawet po **0,17 €/kWh** — najlepszej cenie dnia.',
+      'Dlaczego przed południem przestaliśmy sprzedawać energię z PV?',
+      `O ${DAY.chargeFrom} cena spadła poniżej **${dec(buyT)} €/kWh** i zmierzała do najtańszych godzin dnia. Od tej chwili bardziej opłaca się magazynować darmową energię z PV, niż sprzedawać ją za grosze. Znów sprzedawaliśmy od ${DAY.sellFrom}, nawet po **${dec(DAY.peakPrice)} €/kWh** — najlepszej cenie dnia.`,
       'A jeśli zostawię 20 % rezerwy na noc?',
       'Symulacja z ostatnich 30 dni: około **−2 € dziennie**, a rezerwa wystarczy na dwugodzinną przerwę w zasilaniu. Na razie niczego nie zmieniłem — napisz „zastosuj”, a to ustawię.',
     ],
@@ -182,7 +188,6 @@ export const pl: Dict = {
     input: 'Zapytaj o swoją instalację…',
   },
   marquee: { label: 'Działa ze sprzętem, który już masz' },
-  marqueeAi: { label: 'Działa na wiodących modelach AI' },
   tech: {
     eyebrow: 'Technologia',
     title: 'Dongle, bramka lub chmura — odczytujemy i sterujemy tym, co masz.',
@@ -215,7 +220,7 @@ export const pl: Dict = {
     eyebrow: 'Efekt',
     title: 'Więcej pieniędzy z tej samej baterii.',
     items: [
-      { value: '+22 %', text: 'wyższy przychód niż ta sama instalacja sprzedająca energię z PV na bieżąco' },
+      { value: `+${DAY.upliftPct} %`, text: 'wyższy przychód w dniu modelowym powyżej niż ta sama instalacja sprzedająca energię z PV na bieżąco' },
       { value: '5×', text: 'różnica między ceną w południe a wieczornym szczytem, wykorzystywana codziennie' },
       { value: '24/7', text: 'automatycznie — dyspozytor planuje, działa i raportuje bez niczyjego dyżuru' },
     ],
@@ -243,6 +248,7 @@ export const pl: Dict = {
     about: '**Azileon** tworzy oprogramowanie dla urządzeń samoobsługowych i systemów płatniczych: kiosk płatniczy na gotówkę i karty z back-office dla Payment4U, automat paczkowy z panelem dyspozytora na żywo dla Košík.cz.',
     role: 'współzałożyciel',
     write: 'Napisz do nas',
+    mail: { subject: 'Szacunek przychodu z magazynu', body: 'PV (kWp):\nMagazyn (kWh / kW):\nFalowniki:\nJak sprzedajecie energię (spot / cena stała):' },
   },
   footer: { tagline: 'Oprogramowanie dla urządzeń samoobsługowych, systemów płatniczych i energetyki' },
 };

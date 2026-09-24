@@ -3,6 +3,7 @@ import { EnergyScene } from './EnergyScene';
 import { DispatcherPanel } from './DispatcherPanel';
 import { SceneStats } from './SceneStats';
 import { LangSwitch, Rich, useT } from '../i18n';
+import { mailto } from '../company';
 
 export function Hero() {
   const { t } = useT();
@@ -30,7 +31,8 @@ export function Hero() {
       <div className="hero-cta">
         <div className="btns">
           <a className="btn pri" href="#how">{t.hero.how}</a>
-          <a className="btn soft" href="#contact">{t.hero.order}</a>
+          {/* opens a mail with the estimate template: plant size, battery, inverters, how the electricity is sold */}
+          <a className="btn soft" href={mailto(t)}>{t.hero.order}</a>
         </div>
         <p className="facts">
           <b>{t.hero.facts}</b> · {t.hero.dayNote}

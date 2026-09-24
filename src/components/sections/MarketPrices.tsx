@@ -3,8 +3,8 @@ import { Flag } from '../Flag';
 import { useT } from '../../i18n';
 
 /* Real day-ahead figures for the three markets, collected 23 Sep 2026:
-   CZ — OTE day-ahead (euenergy.live), PL — TGE RDN / PSE RCE (nexbe.pl, TGE), UA — Оператор ринку indexes via ExPro, NEURC cap.
-   FX used for the € column: 4.37 PLN/€, 51.3 UAH/€. */
+   CZ — OTE day-ahead (hourly prices; BASE 179.51 €/MWh, 07:00 318.52, 13:00 62.75, 19:00 311.03), PL — TGE RDN / PSE RCE,
+   UA — Оператор ринку indexes via ExPro, NEURC cap. FX used for the € column: 4.37 PLN/€, 51.3 UAH/€, ~24.45 CZK/€. */
 
 type Row = { label: string; local: string; eur: string; tone?: 'low' | 'peak' };
 
@@ -25,13 +25,14 @@ export function MarketPrices() {
       market: 'OTE · day-ahead',
       date: '23.09.2026',
       rows: [
+        { label: `${p.morningPeak} · 07:00`, local: czk('7.79'), eur: eur('0.319'), tone: 'peak' },
         { label: `${p.noonLow} · 13:00`, local: czk('1.53'), eur: eur('0.063'), tone: 'low' },
-        { label: `${p.eveningPeak} · 19:00`, local: czk('7.57'), eur: eur('0.31'), tone: 'peak' },
-        { label: p.dayAvg, local: czk('3.77'), eur: eur('0.155') },
+        { label: `${p.eveningPeak} · 19:00`, local: czk('7.57'), eur: eur('0.311'), tone: 'peak' },
+        { label: p.dayAvg, local: czk('4.39'), eur: eur('0.180') },
         { label: `${p.monthAvg} · 09/2026`, local: czk('3.70'), eur: eur('0.152') },
         { label: p.spread, local: '5×', eur: '' },
       ],
-      source: 'OTE, euenergy.live',
+      source: 'OTE',
     },
     {
       id: 'pl',
@@ -44,7 +45,7 @@ export function MarketPrices() {
         { label: `${p.monthAvg} · 08/2026`, local: pln('0.56'), eur: eur('0.128') },
         { label: p.spread, local: n('5.8') + '×', eur: '' },
       ],
-      source: 'TGE, PSE / nexbe.pl',
+      source: 'TGE, PSE',
     },
     {
       id: 'ua',
@@ -55,7 +56,6 @@ export function MarketPrices() {
         { label: `${p.base} · 03.09.2026`, local: uah('8.62'), eur: eur('0.168'), tone: 'peak' },
         { label: `${p.peakOff} · 04/2026`, local: n('7.36') + ' / ' + uah('6.69'), eur: n('0.143') + ' / ' + eur('0.130') },
         { label: `${p.cap} · 05/2026 →`, local: uah('15.00'), eur: eur('0.29') },
-        { label: p.spreadPeak, local: '≈' + n('1.1') + '×', eur: '' },
       ],
       source: 'Оператор ринку, ExPro, НКРЕКП',
       note: p.uaNote,

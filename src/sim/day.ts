@@ -1,10 +1,14 @@
-/* One simulated day of a 1 MWp solar plant with a 2.4 MWh battery — the model from the original mockup. */
+/* One simulated day of a 1 MWp solar plant with a 2.4 MWh battery behind a 1 MW grid connection.
+   A model day: the price curve is illustrative, the real market figures live in the "Market prices" section. */
 import type { Dict } from '../i18n/en';
 
 export const CAP = 2.4; // battery capacity, MWh
-export const PMAX = 1.2; // inverter power, MW
+export const PMAX = 1.2; // battery inverter (PCS) power, MW
+export const GRID = 1.0; // grid connection, MW — the export never goes above it
+export const PV_PEAK = 0.85; // MW a 1 MWp plant gives at noon on a clear September day (~6.5 MWh over the day)
+export const SUNRISE = 7, SUNSET = 19;
 
-/* Pacing: the loop starts at sunrise, daytime runs slowly, the night is fast-forwarded. */
+/* Pacing: the loop starts before sunrise, daytime runs slowly, the night is fast-forwarded. */
 export const DAY_START = 6; // the loop begins at 06:00
 export const DAY_SECONDS = 64; // 06:00–22:00 in real seconds (4 s per hour)
 export const NIGHT_SECONDS = 6; // 22:00–06:00 in real seconds
@@ -26,8 +30,8 @@ export const price = (hr: number) =>
     1.6 * Math.exp(-((hr - 13) ** 2) / 8) -
     0.8 * Math.exp(-((hr - 3) ** 2) / 6));
 
-/** Solar output, MW. */
-export const solar = (hr: number) => Math.max(0, Math.sin(((hr - 6) / 13) * Math.PI)) * 1.023;
+/** Solar output, MW: a half-sine between sunrise and sunset. */
+export const solar = (hr: number) => Math.max(0, Math.sin(((hr - SUNRISE) / (SUNSET - SUNRISE)) * Math.PI)) * PV_PEAK;
 
 export const PTS = Array.from({ length: 97 }, (_, i) => price(i / 4));
 export const pMin = Math.min(...PTS);
@@ -37,8 +41,11 @@ export const sellT = pMin + (pMax - pMin) * 0.62;
 
 export type Mode = 'charge' | 'sell' | 'hold';
 
-/** What the dispatcher plans for a given hour — used to paint the chart zones. */
-export const plan = (hr: number): Mode | null => (price(hr) >= sellT ? 'sell' : solar(hr) > 0.05 ? 'charge' : null);
+/** What the dispatcher plans for a given hour — used to paint the chart zones. Charge only in the cheapest hours
+ *  (the battery holds less than the day's solar, so the dearer morning output is sold as it comes), sell at the
+ *  evening peak. The battery sold out the evening before, so the high morning prices carry no zone. */
+export const plan = (hr: number): Mode | null =>
+  price(hr) >= sellT ? (hr >= 12 ? 'sell' : null) : price(hr) <= buyT && solar(hr) > 0.05 ? 'charge' : null;
 
 /** Colour of each mode; the labels live in the dictionaries (t.modes). */
 export const MODE_COLOR: Record<Mode, string> = { charge: '#16a34a', sell: '#3b6cff', hold: '#8b8f96' };
@@ -79,16 +86,30 @@ export function priceTag(p: number, t: Dict) {
   return t.tags.average;
 }
 
+/** The next quarter hour (from `hr` on, wrapping past midnight) when the plan says "sell", with the price then. */
+export function nextSale(hr: number) {
+  const from = Math.ceil(hr * 4);
+  for (let i = 1; i <= 96; i++) {
+    const h = ((from + i) % 96) / 4;
+    if (plan(h) === 'sell') return { clock: clockOf(h), price: price(h) };
+  }
+  return { clock: clockOf(19.5), price: price(19.5) };
+}
+
+export const RESERVE = 0.08; // the battery never goes below this state of charge
+
 /** One sentence on what the dispatcher is doing right now, with the money in it. */
 export function reason(s: Snapshot, t: Dict) {
   const p = t.price(s.price), tag = priceTag(s.price, t);
   if (s.mode === 'sell') return t.reason.sell(p, tag, s.rate);
-  if (s.mode === 'charge') return t.reason.charge(p, tag);
-  return t.reason.hold(p, tag);
+  if (s.mode === 'hold' && s.price >= sellT && s.soc <= RESERVE + 0.02) return t.reason.empty(p, tag);
+  const next = nextSale(s.hr);
+  const nextPrice = t.price(next.price);
+  return s.mode === 'charge' ? t.reason.charge(p, tag, next.clock, nextPrice) : t.reason.hold(p, tag, next.clock, nextPrice);
 }
 
 export class DaySim {
-  soc = 0.35;
+  soc = RESERVE; // the day starts where the evening sale left the battery, so every loop is the same day
   rev = 0;
   private lastHr = DAY_START;
 
@@ -105,17 +126,18 @@ export class DaySim {
     const pv = solar(hr);
     let mode: Mode = 'hold';
     let batP = 0;
-    if (p >= sellT && this.soc > 0.08) {
+    if (p >= sellT && this.soc > RESERVE) {
       mode = 'sell';
-      batP = -Math.min(PMAX, (this.soc * CAP) / Math.max(dh, 1e-3));
-    } else if (p <= sellT && pv > 0.05 && this.soc < 0.98) {
-      mode = 'charge';
+      // discharge only into the room the grid connection leaves next to the solar output
+      batP = -Math.min(PMAX, Math.max(0, GRID - pv), (this.soc * CAP) / Math.max(dh, 1e-3));
+    } else if (p <= buyT && pv > 0.05 && this.soc < 0.98) {
+      mode = 'charge'; // the cheapest hours fill the battery; solar at other times goes to the grid
       batP = Math.min(pv, PMAX);
     }
     this.soc = Math.min(1, Math.max(0, this.soc + (batP * dh) / CAP));
     const pvToGrid = Math.max(0, pv - Math.max(0, batP));
     const batToGrid = Math.max(0, -batP);
-    const gridP = pvToGrid + batToGrid;
+    const gridP = Math.min(GRID, pvToGrid + batToGrid);
     this.rev += gridP * p * dh * 1000;
     return {
       t,
@@ -138,3 +160,57 @@ export class DaySim {
     };
   }
 }
+
+/** The figures of the model day that the texts quote (journal, scene notes, the result tile). */
+export interface DaySummary {
+  chargeFrom: string; // when the charge that fills the battery starts (the price drops below the sell level)
+  fullClock: string; // when the battery is full from solar
+  sellFrom: string; // when the evening sale starts
+  sellFromPrice: number; // €/kWh at that moment
+  sellTo: string; // when the evening sale ends
+  peakClock: string; // the most expensive moment of the day
+  peakPrice: number;
+  revenue: number; // € earned over the day
+  soldMWh: number; // MWh exported over the day
+  baselineRevenue: number; // € the same plant makes selling solar as it comes, no battery
+  upliftPct: number; // revenue vs. baseline, per cent
+}
+
+/** Runs the first loop of the simulation once, at fine steps, and collects the figures above. */
+export function summarizeDay(): DaySummary {
+  const sim = new DaySim();
+  const dt = 0.005;
+  let prev = sim.step(0, 0);
+  let chargeStart = '', chargeFrom = '', fullClock = '', sellFrom = '', sellTo = '', sellFromPrice = 0;
+  let revenue = 0, sold = 0, baseline = 0, peakPrice = 0, peakHr = 0;
+  for (let t = dt; t <= LOOP; t += dt) {
+    const s = sim.step(t, dt);
+    let dh = s.hr - prev.hr;
+    if (dh < 0) dh += 24;
+    sold += s.gridP * dh;
+    baseline += Math.min(GRID, s.pv) * s.price * dh * 1000;
+    revenue = Math.max(revenue, s.rev);
+    if (s.price > peakPrice) { peakPrice = s.price; peakHr = s.hr; }
+    if (s.mode === 'charge' && prev.mode !== 'charge') chargeStart = s.clock;
+    if (!fullClock && s.soc >= 0.98) { fullClock = s.clock; chargeFrom = chargeStart; }
+    if (!sellFrom && s.hr > 12 && s.mode === 'sell') { sellFrom = s.clock; sellFromPrice = s.price; }
+    if (sellFrom && s.mode === 'sell') sellTo = s.clock;
+    prev = s;
+  }
+  return {
+    chargeFrom,
+    fullClock,
+    sellFrom,
+    sellFromPrice,
+    sellTo,
+    peakClock: clockOf(peakHr),
+    peakPrice,
+    revenue,
+    soldMWh: sold,
+    baselineRevenue: baseline,
+    upliftPct: Math.round(((revenue - baseline) / baseline) * 100),
+  };
+}
+
+/** Computed once at load; the dictionaries quote it so the journal always matches the scene. */
+export const DAY = summarizeDay();

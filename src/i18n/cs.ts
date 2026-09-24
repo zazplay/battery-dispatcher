@@ -1,7 +1,9 @@
 import type { Dict } from './en';
+import { DAY, buyT } from '../sim/day';
 
 const fmt = (n: number) => n.toLocaleString('cs-CZ', { maximumFractionDigits: 0 });
 const dec = (p: number) => p.toFixed(3).replace('.', ',');
+const mwh = (n: number) => n.toFixed(1).replace('.', ',');
 
 export const cs: Dict = {
   code: 'cs',
@@ -16,8 +18,8 @@ export const cs: Dict = {
     badge: 'AI dispečer baterií',
     title: '**AI** prodává energii z vaší baterie za nejlepší cenu dne — a nabíjí, když je elektřina nejlevnější. Automaticky, 24/7.',
     how: 'Jak to funguje',
-    order: 'Objednat systém',
-    facts: '1 MWp FVE · 2,4 MWh baterie · 1,2 MW střídač',
+    order: 'Spočítat výnos',
+    facts: '1 MWp FVE · 2,4 MWh baterie · 1 MW připojení',
     dayNote: 'celý den zhruba za minutu',
   },
   scene: {
@@ -40,7 +42,7 @@ export const cs: Dict = {
     { title: 'Pokles napětí v síti · 0,91 pu', note: 'Pokles napětí v síti — export omezen na 400 kW, dokud se napětí nevrátí do normy.' },
     { title: 'Nízké napětí článků · Baterie 3', note: 'Nízké napětí článků v baterii 3 — spuštěno vyrovnávání. Pokud se to bude opakovat, zkontrolujte rack.' },
     { title: 'Vysoká teplota · Baterie 5', note: 'Baterie 5 má 47 °C — nabíjení zpomaleno, zkontrolujte chlazení.' },
-    { title: 'Blíží se cenová špička', note: 'Cenová špička v 19:00 — prodáváme 18:00–21:00.' },
+    { title: 'Blíží se cenová špička', note: `Cenová špička v ${DAY.peakClock} — prodáváme ${DAY.sellFrom}–${DAY.sellTo}.` },
     { title: 'Vše v pořádku', note: 'Vše vyřešeno. Denní přehled odeslán.' },
   ],
   modes: { charge: 'Nabíjí', sell: 'Prodává', hold: 'Čeká' },
@@ -52,8 +54,9 @@ export const cs: Dict = {
   },
   reason: {
     sell: (p, tag, rate) => `Prodává za ${p} — ${tag}. Baterie dodávají do sítě, +${fmt(rate)} € za hodinu.`,
-    charge: (p, tag) => `Ukládá energii ze slunce při ${p} — ${tag}. Prodá ji ve večerní špičce.`,
-    hold: (p, tag) => `Čeká: ${p} je ${tag}. Drží energii na lepší cenu.`,
+    charge: (p, tag, next, nextPrice) => `Ukládá energii ze slunce při ${p} — ${tag}. Další prodej v ${next} od ${nextPrice}.`,
+    hold: (p, tag, next, nextPrice) => `Čeká: ${p} je ${tag}. Další prodej v ${next} od ${nextPrice}.`,
+    empty: (p, tag) => `Baterie na rezervě 8 %. ${p} je ${tag}, ale už není co prodat.`,
   },
   panel: { title: 'AI dispečer baterií', charges: 'AI nabíjí', sells: 'AI prodává', price: 'cena elektřiny' },
 
@@ -65,9 +68,10 @@ export const cs: Dict = {
   ],
   prices: {
     eyebrow: 'Skutečné ceny na trhu',
-    title: 'Kolik dnes platí trh.',
+    title: 'Co trh platil 23. 9. 2026.',
     sub: 'Ceny denního trhu ve třech zemích, kde působíme. Rozdíl mezi polednem a večerní špičkou jsou peníze, které baterie vydělá.',
     countries: { cz: 'Česko', pl: 'Polsko', ua: 'Ukrajina' },
+    morningPeak: 'Ranní špička',
     noonLow: 'Polední minimum',
     eveningPeak: 'Večerní špička',
     dayAvg: 'Denní průměr',
@@ -76,7 +80,6 @@ export const cs: Dict = {
     base: 'Index BASE',
     peakOff: 'PEAK / OFF-PEAK',
     cap: 'Cenový strop',
-    spreadPeak: 'Špička / mimo špičku',
     source: 'Zdroj',
     asOf: 'stav k',
     fx: 'Přepočteno kurzem 4,37 PLN a 51,3 UAH za euro (23. 9. 2026).',
@@ -93,6 +96,7 @@ export const cs: Dict = {
     markPeak: '19:30 · 0,17 € / kWh',
     zoneCharge: 'nabíjení',
     zoneSell: 'prodej',
+    note: 'Modelový den — stejný, jaký přehrává scéna nahoře. Skutečné ceny z 23. 9. 2026 jsou v další sekci.',
   },
   how: {
     eyebrow: 'Jak to funguje',
@@ -151,13 +155,15 @@ export const cs: Dict = {
     journalTitle: 'Deník · dnes',
     journal: [
       ['06:10', 'Ranní autotest: izolace 2,1 MΩ, všechny střídače v pořádku', 'ok'],
+      [DAY.chargeFrom, `Cena pod ${dec(buyT)} €/kWh — energie ze slunce teď jde do baterie`, 'ok'],
       ['10:42', 'String 7 na střídači 3: 612 V, o 12 % méně než sousední → upozornění technikovi (Telegram)', 'alert'],
       ['11:15', 'Technik: stín od jeřábu na místě, bez zásahu — kontrola ve 14:00', 'note'],
-      ['12:30', 'Bateriový rack 2: nevyvážené články — automaticky spuštěno vyrovnávání', 'ok'],
-      ['13:05', 'Nabíjení ze sítě za −4 €/MWh, baterie plná v 15:00', 'ok'],
-      ['17:45', 'Začal prodej za 0,176 €/kWh', 'ok'],
-      ['19:30', 'Špička 0,311 €/kWh — limit exportu dodržen', 'ok'],
-      ['21:10', 'Denní přehled odeslán e-mailem: +355 €, prodáno 1,6 MWh', 'mail'],
+      [DAY.fullClock, 'Baterie plná ze slunce — držíme na večerní špičku', 'ok'],
+      ['14:10', 'Bateriový rack 2: nevyvážené články — automaticky spuštěno vyrovnávání', 'ok'],
+      [DAY.sellFrom, `Začal prodej za ${dec(DAY.sellFromPrice)} €/kWh`, 'ok'],
+      [DAY.peakClock, `Špička ${dec(DAY.peakPrice)} €/kWh — export držen na limitu připojení 1 MW`, 'ok'],
+      [DAY.sellTo, 'Baterie na rezervě 8 % — prodej zastaven', 'ok'],
+      ['21:40', `Denní přehled odeslán e-mailem: +${fmt(DAY.revenue)} €, prodáno ${mwh(DAY.soldMWh)} MWh`, 'mail'],
     ],
     notePlaceholder: 'Přidat poznámku pro tým…',
     noteHint: 'Poznámky zůstávají u elektrárny a jdou do měsíčního reportu.',
@@ -169,8 +175,8 @@ export const cs: Dict = {
     status: 'online · sleduje Kolín — Farma Jih',
     owner: 'Majitel',
     messages: [
-      'Proč jsme dnes v půl desáté přestali prodávat?',
-      'V 9:30 klesla cena pod **0,12 €/kWh** a začalo svítit slunce. Od té chvíle se víc vyplatí energii ze slunce ukládat než ji prodávat pod cenou. Znovu jsme prodávali od zhruba 17:45, až za **0,17 €/kWh** — nejlepší cenu dne.',
+      'Proč jsme před polednem přestali prodávat energii ze slunce?',
+      `V ${DAY.chargeFrom} klesla cena pod **${dec(buyT)} €/kWh** a mířila k nejlevnějším hodinám dne. Od té chvíle se víc vyplatí energii ze slunce ukládat než ji prodávat pod cenou. Znovu jsme prodávali od ${DAY.sellFrom}, až za **${dec(DAY.peakPrice)} €/kWh** — nejlepší cenu dne.`,
       'Co když si nechám 20% rezervu na noc?',
       'Simulace za posledních 30 dní: zhruba **−2 € denně** a rezerva by pokryla dvouhodinový výpadek. Zatím jsem nic nezměnil — napište „použít“ a nastavím to.',
     ],
@@ -182,7 +188,6 @@ export const cs: Dict = {
     input: 'Zeptejte se na svou elektrárnu…',
   },
   marquee: { label: 'Funguje se zařízením, které už provozujete' },
-  marqueeAi: { label: 'Běží na předních AI modelech' },
   tech: {
     eyebrow: 'Technologie',
     title: 'Dongle, brána nebo cloud — čteme a řídíme to, co máte.',
@@ -215,7 +220,7 @@ export const cs: Dict = {
     eyebrow: 'Výsledek',
     title: 'Víc peněz ze stejné baterie.',
     items: [
-      { value: '+22 %', text: 'vyšší výnos než stejná elektrárna, která prodává hned, jak vyrobí' },
+      { value: `+${DAY.upliftPct} %`, text: 'vyšší výnos v modelovém dni nahoře než stejná elektrárna, která prodává hned, jak vyrobí' },
       { value: '5×', text: 'rozdíl mezi polední a večerní cenou, využitý každý den' },
       { value: '24/7', text: 'automaticky — dispečer plánuje, řídí a reportuje, aniž by někdo musel držet službu' },
     ],
@@ -243,6 +248,7 @@ export const cs: Dict = {
     about: '**Azileon** vyvíjí software pro samoobslužná zařízení a platební systémy: platební kiosek na hotovost i karty s back-office pro Payment4U, výdejní box s živým dispečerským panelem pro Košík.cz.',
     role: 'spoluzakladatel',
     write: 'Napište nám',
+    mail: { subject: 'Odhad výnosu baterie', body: 'FVE (kWp):\nBaterie (kWh / kW):\nStřídače:\nJak prodáváte elektřinu (spot / pevná cena):' },
   },
   footer: { tagline: 'Software pro samoobslužná zařízení, platební systémy a energetiku' },
 };

@@ -1,5 +1,10 @@
-/* English — the source of truth for the dictionary shape. `**text**` marks bold parts (see <Rich>). */
+/* English — the source of truth for the dictionary shape. `**text**` marks bold parts (see <Rich>).
+   Figures of the model day (journal, chat, result tile) come from DAY, so they always match the scene. */
+import { DAY, buyT } from '../sim/day';
+
 const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+const price = (p: number) => '€' + p.toFixed(3) + '/kWh';
+const mwh = (n: number) => n.toFixed(1);
 
 export const en = {
   code: 'en',
@@ -8,7 +13,7 @@ export const en = {
   meta: { title: 'Battery Dispatcher · Azileon', description: "AI battery dispatcher for solar plants: charges in the cheapest hours, sells at the day's peak price. Delivered turnkey by Azileon." },
   // money & numbers
   eur: (n: number) => '€' + fmt(n),
-  price: (p: number) => '€' + p.toFixed(3) + '/kWh',
+  price,
   priceShort: (p: number) => '€' + p.toFixed(3),
   rate: (n: number) => `+€${fmt(n)} / h`,
 
@@ -16,8 +21,8 @@ export const en = {
     badge: 'AI battery dispatcher',
     title: "**AI** sells your battery's energy at the best price of the day — and charges when it's cheapest. Automatically, 24/7.",
     how: 'See how it works',
-    order: 'Order the system',
-    facts: '1 MWp solar · 2.4 MWh batteries · 1.2 MW inverter',
+    order: 'Get a revenue estimate',
+    facts: '1 MWp solar · 2.4 MWh batteries · 1 MW grid connection',
     dayNote: 'one day in about a minute',
   },
   scene: {
@@ -41,7 +46,7 @@ export const en = {
     { title: 'Grid voltage sag · 0.91 pu', note: 'Grid voltage sag — export capped at 400 kW until it recovers.' },
     { title: 'Low cell voltage · Unit 3', note: 'Low cell voltage in unit 3 — balancing started. If it repeats, check the rack.' },
     { title: 'High temperature · Unit 5', note: 'Unit 5 at 47 °C — charging slowed, check the cooling.' },
-    { title: 'Price spike forecast', note: 'Price peak at 19:00 — selling 18:00–21:00.' },
+    { title: 'Price spike forecast', note: `Price peak at ${DAY.peakClock} — selling ${DAY.sellFrom}–${DAY.sellTo}.` },
     { title: 'All systems normal', note: 'All issues resolved. Daily report sent.' },
   ],
   modes: { charge: 'Charging', sell: 'Selling', hold: 'Waiting' },
@@ -53,8 +58,9 @@ export const en = {
   },
   reason: {
     sell: (p: string, tag: string, rate: number) => `Selling at ${p} — ${tag}. Batteries feed the grid at +€${fmt(rate)} per hour.`,
-    charge: (p: string, tag: string) => `Storing solar at ${p} — ${tag}. The energy will be sold at the evening peak.`,
-    hold: (p: string, tag: string) => `Waiting: ${p} is ${tag}. Holding the charge for a better price.`,
+    charge: (p: string, tag: string, next: string, nextPrice: string) => `Storing solar at ${p} — ${tag}. Next sale at ${next} from ${nextPrice}.`,
+    hold: (p: string, tag: string, next: string, nextPrice: string) => `Waiting: ${p} is ${tag}. Next sale at ${next} from ${nextPrice}.`,
+    empty: (p: string, tag: string) => `Battery at the 8 % reserve. ${p} is ${tag}, but there is nothing left to sell.`,
   },
   panel: { title: 'AI battery dispatcher', charges: 'AI charges', sells: 'AI sells', price: 'electricity price' },
 
@@ -66,9 +72,10 @@ export const en = {
   ],
   prices: {
     eyebrow: 'Real market prices',
-    title: 'What the grid pays today.',
+    title: 'What the market paid on 23 September 2026.',
     sub: 'Day-ahead prices on the three markets we work in. The gap between noon and the evening peak is the money a battery earns.',
     countries: { cz: 'Czechia', pl: 'Poland', ua: 'Ukraine' },
+    morningPeak: 'Morning peak',
     noonLow: 'Noon low',
     eveningPeak: 'Evening peak',
     dayAvg: 'Day average',
@@ -77,7 +84,6 @@ export const en = {
     base: 'BASE index',
     peakOff: 'PEAK / OFF-PEAK',
     cap: 'Price cap',
-    spreadPeak: 'Peak / off-peak',
     source: 'Source',
     asOf: 'as of',
     fx: 'Converted at 4.37 PLN and 51.3 UAH per euro (23 Sep 2026).',
@@ -94,6 +100,7 @@ export const en = {
     markPeak: '19:30 · €0.17 / kWh',
     zoneCharge: 'charge',
     zoneSell: 'sell',
+    note: 'A model day, the same one the scene above plays. The real prices of 23 September 2026 are in the next section.',
   },
   how: {
     eyebrow: 'How it works',
@@ -150,15 +157,18 @@ export const en = {
       actions: ['Acknowledge', 'Open site'],
     },
     journalTitle: 'Journal · today',
+    /* the day of the scene: the times and prices come from the simulation */
     journal: [
       ['06:10', 'Morning self-test: insulation 2.1 MΩ, all inverters OK', 'ok'],
+      [DAY.chargeFrom, `Price below ${price(buyT)} — solar now goes into the battery`, 'ok'],
       ['10:42', 'String 7 on inverter 3: 612 V, 12 % below its neighbours → alert to the technician (Telegram)', 'alert'],
       ['11:15', 'Technician: shading from a crane on site, no action — re-check at 14:00', 'note'],
-      ['12:30', 'Battery rack 2: cells out of balance — balancing started automatically', 'ok'],
-      ['13:05', 'Charging from the grid at −4 €/MWh, battery full by 15:00', 'ok'],
-      ['17:45', 'Selling started at 0.176 €/kWh', 'ok'],
-      ['19:30', 'Peak 0.311 €/kWh — export limit respected', 'ok'],
-      ['21:10', 'Daily report e-mailed: +355 €, 1.6 MWh sold', 'mail'],
+      [DAY.fullClock, 'Battery full from solar — holding for the evening peak', 'ok'],
+      ['14:10', 'Battery rack 2: cells out of balance — balancing started automatically', 'ok'],
+      [DAY.sellFrom, `Selling started at ${price(DAY.sellFromPrice)}`, 'ok'],
+      [DAY.peakClock, `Peak ${price(DAY.peakPrice)} — export held at the 1 MW connection limit`, 'ok'],
+      [DAY.sellTo, 'Battery down to the 8 % reserve — selling stopped', 'ok'],
+      ['21:40', `Daily report e-mailed: +€${fmt(DAY.revenue)}, ${mwh(DAY.soldMWh)} MWh sold`, 'mail'],
     ],
     notePlaceholder: 'Add a note for the team…',
     noteHint: 'Notes stay with the site and go into the monthly report.',
@@ -170,8 +180,8 @@ export const en = {
     status: 'online · watching Kolín — Farma Jih',
     owner: 'Owner',
     messages: [
-      'Why did we stop selling at half past nine this morning?',
-      'At 09:30 the price fell below **€0.12/kWh** and the sun was coming up. From that point, storing free solar beats selling it. We sold again from about 17:45, at up to **€0.17/kWh** — the best price of the day.',
+      'Why did we stop selling solar before noon?',
+      `At ${DAY.chargeFrom} the price fell below **${price(buyT)}**, heading into the cheapest hours of the day. From that point, storing free solar beats selling it cheaply. We sold again from ${DAY.sellFrom}, at up to **${price(DAY.peakPrice)}** — the best price of the day.`,
       'What if I keep a 20 % reserve for the night?',
       'Simulated over the last 30 days: about **−€2 per day**, and the reserve would carry the site through a two-hour outage. Nothing was changed on the equipment — say "apply" and I\'ll set it.',
     ],
@@ -183,7 +193,6 @@ export const en = {
     input: 'Ask about your site…',
   },
   marquee: { label: 'Works with the equipment you already run' },
-  marqueeAi: { label: 'Runs on the leading AI models' },
   tech: {
     eyebrow: 'Technology',
     title: 'Dongle, gateway or cloud — we read and control what you have.',
@@ -216,7 +225,7 @@ export const en = {
     eyebrow: 'The result',
     title: 'More money from the same battery.',
     items: [
-      { value: '+22 %', text: 'more revenue than the same site selling solar as it comes' },
+      { value: `+${DAY.upliftPct} %`, text: 'more revenue on the model day above than the same site selling solar as it comes' },
       { value: '5×', text: 'the price difference between noon and the evening peak, used every day' },
       { value: '24/7', text: 'automatic — the dispatcher plans, acts and reports without anyone on shift' },
     ],
@@ -244,6 +253,8 @@ export const en = {
     about: '**Azileon** builds software for self-service devices and payment systems: a cash-and-card payment kiosk with back-office for Payment4U, a parcel locker with a live dispatcher panel for Košík.cz.',
     role: 'co-founder',
     write: 'Write to us',
+    /* the mail the buttons open — a template the reader fills in */
+    mail: { subject: 'Battery revenue estimate', body: 'Solar plant (kWp):\nBattery (kWh / kW):\nInverters:\nHow you sell the electricity (spot / fixed price):' },
   },
   footer: { tagline: 'Software for self-service devices, payment systems and energy sites' },
 };

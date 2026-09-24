@@ -7,11 +7,12 @@ import { cs } from './src/i18n/cs';
 import { pl } from './src/i18n/pl';
 import { uk } from './src/i18n/uk';
 
+const SITE = 'https://battery.azileon.cz';
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 
 /* Every language has its own address, <base><lang>/ (see src/i18n/index.tsx). A static host can only serve what exists
    on disk, so after the build this writes dist/<lang>/index.html for each language: the same page with <html lang>,
-   <title> and the description already in that language — a shared link previews in the right language. */
+   <title>, the description and the Open Graph tags already in that language — a shared link previews in the right language. */
 function languagePages(): Plugin {
   let outDir = 'dist';
   return {
@@ -23,10 +24,14 @@ function languagePages(): Plugin {
     closeBundle() {
       const html = readFileSync(join(outDir, 'index.html'), 'utf8');
       for (const [lang, dict] of Object.entries({ en, cs, pl, uk })) {
+        const title = escapeHtml(dict.meta.title), description = escapeHtml(dict.meta.description);
         const page = html
           .replace(/<html lang="[^"]*"/, `<html lang="${lang}"`)
-          .replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(dict.meta.title)}</title>`)
-          .replace(/(<meta name="description" content=")[^"]*"/, `$1${escapeHtml(dict.meta.description)}"`);
+          .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
+          .replace(/(<meta name="description" content=")[^"]*"/, `$1${description}"`)
+          .replace(/(<meta property="og:url" content=")[^"]*"/, `$1${SITE}/${lang}/"`)
+          .replace(/(<meta property="og:title" content=")[^"]*"/, `$1${title}"`)
+          .replace(/(<meta property="og:description" content=")[^"]*"/, `$1${description}"`);
         mkdirSync(join(outDir, lang), { recursive: true });
         writeFileSync(join(outDir, lang, 'index.html'), page);
       }

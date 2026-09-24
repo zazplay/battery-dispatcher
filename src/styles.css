@@ -19,7 +19,7 @@
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; background: var(--bg); color: var(--ink); font-family: Inter, -apple-system, "SF Pro Display", "Segoe UI", Helvetica, Arial, sans-serif; padding-inline: 16px; line-height: 1.5; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Inter Variable", Inter, -apple-system, "SF Pro Display", "Segoe UI", Helvetica, Arial, sans-serif; padding-inline: 16px; line-height: 1.5; }
 .wrap { max-width: 1180px; margin: 0 auto; }
 a { color: inherit; }
 h1, h2, h3 { margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
@@ -147,11 +147,6 @@ h1.ai-line b { color: var(--blue); font-weight: 800; }
 /* logo heights are set per brand from the file's aspect ratio, so wide wordmarks and compact marks carry the same visual weight */
 .brand-mark img { width: auto; max-width: 200px; object-fit: contain; display: block; mix-blend-mode: multiply; }
 .brand-mark i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; flex: none; }
-/* second ribbon: AI models, white band, scrolling the other way */
-.marquee-ai { background: var(--bg); border-top: 0; }
-.marquee-row.reverse { animation-direction: reverse; animation-duration: 42s; }
-.ai-mark { font-size: 16px; gap: 10px; margin-right: 44px; }
-.ai-mark svg { width: 28px; height: 28px; }
 
 /* =====================================================================
    Sections
@@ -175,6 +170,7 @@ h1.ai-line b { color: var(--blue); font-weight: 800; }
 .chart-card .cap { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); gap: 10px; flex-wrap: wrap; }
 .cap-g b { color: var(--green); }
 .cap-b b { color: var(--blue); }
+.chart-note { margin-top: 10px; font-size: 12.5px; color: var(--grey); }
 svg text { font-family: inherit; }
 .zlabel { font-size: 12px; font-weight: 700; }
 .axis { font-size: 11px; fill: #8b8f96; }

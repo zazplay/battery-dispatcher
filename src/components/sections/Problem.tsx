@@ -30,6 +30,8 @@ export function Problem() {
             <span className="cap-g"><Rich text={t.problem.cap1} /></span>
             <span className="cap-b"><Rich text={t.problem.cap2} /></span>
           </div>
+          {/* the curve is the model day of the scene; the real market figures follow in the next section */}
+          <p className="chart-note">{t.problem.note}</p>
         </Reveal>
       </div>
     </section>

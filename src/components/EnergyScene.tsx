@@ -131,7 +131,7 @@ export function EnergyScene() {
       animateSite(site, s);
       const w = host.clientWidth, h = host.clientHeight;
       const phone = isPhone();
-      alerts.update(s.hr, s.t, stage.camera, w, h, d);
+      if (!phone) alerts.update(s.hr, s.t, stage.camera, w, h, d); // the phone card is too small for the AI notes and beacon
       for (const n of nodes) {
         const p = n.at.clone().project(stage.camera);
         const visible = p.z < 1 && p.z > -1;

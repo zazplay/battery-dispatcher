@@ -410,9 +410,7 @@ footer a { color: inherit; padding-block: 8px; }
   .btns .btn { flex: 1 1 0; justify-content: center; padding: 13px 10px; font-size: 14.5px; white-space: nowrap; }
   .facts { margin-top: 12px; font-size: 12px; }
   .stage-wrap { height: 78vw; min-height: 260px; max-height: 440px; margin: 0 16px; border: 1px solid var(--line); border-radius: 16px; }
-  .hud { display: none; }
-  .co-card { width: 170px; padding: 8px 10px; }
-  .co-note { font-size: 11.5px; }
+  .hud, .callouts { display: none; } /* no money HUD and no AI notes on the small card */
   .lbl .val { font-size: 16px; }
   .lbl .val small { font-size: 11px; }
   .lbl .ttl { font-size: 11px; margin-top: 0; }

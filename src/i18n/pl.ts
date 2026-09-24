@@ -15,7 +15,6 @@ export const pl: Dict = {
     badge: 'Dyspozytor AI dla baterii',
     title: '**AI** sprzedaje energię z Twojej baterii po najlepszej cenie dnia — i ładuje, gdy prąd jest najtańszy. Automatycznie, 24/7.',
     how: 'Jak to działa',
-    demo: 'Umów demo',
     facts: '1 MWp PV · 2,4 MWh magazynu · 1,2 MW falownik',
     dayNote: 'cały dzień w około minutę',
   },

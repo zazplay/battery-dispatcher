@@ -30,7 +30,8 @@ export class Stage {
   constructor(container: HTMLElement) {
     // preserveDrawingBuffer was only needed by the design tool's screenshots; off, it renders cleaner and cheaper
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    // 1.5× supersampling like the second mockup: takes the jagged edges off the cables and panel frames
+    renderer.setPixelRatio(Math.min((window.devicePixelRatio || 1) * 1.5, 3));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping; // the second mockup's softer, filmic look

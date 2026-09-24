@@ -26,11 +26,10 @@ export function Hero() {
       <EnergyScene />
       <SceneStats />
       <DispatcherPanel />
-      {/* buttons + site facts: under the text on desktop, under the dispatcher panel on phones */}
+      {/* button + site facts: under the text on desktop, under the dispatcher panel on phones */}
       <div className="hero-cta">
         <div className="btns">
           <a className="btn pri" href="#how">{t.hero.how}</a>
-          <a className="btn soft" href="#contact">{t.hero.demo}</a>
         </div>
         <p className="facts">
           <b>{t.hero.facts}</b> · {t.hero.dayNote}

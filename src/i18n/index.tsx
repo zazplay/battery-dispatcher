@@ -68,6 +68,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = lang;
     document.title = t.meta.title;
     document.querySelector('meta[name="description"]')?.setAttribute('content', t.meta.description);
+    document.querySelector('link[rel="canonical"]')?.setAttribute('href', location.origin + pathFor(lang)); // follows an in-page switch
   }, [lang, t]);
   useEffect(() => {
     // opened at the bare root, without a language in the address: show the detected one in the address bar

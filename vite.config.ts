@@ -12,7 +12,8 @@ const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
 
 /* Every language has its own address, <base><lang>/ (see src/i18n/index.tsx). A static host can only serve what exists
    on disk, so after the build this writes dist/<lang>/index.html for each language: the same page with <html lang>,
-   <title>, the description and the Open Graph tags already in that language — a shared link previews in the right language. */
+   <title>, the description, the canonical and the Open Graph tags already in that language — a shared link previews
+   in the right language. The hreflang set is the same on every page and stays as written in index.html. */
 function languagePages(): Plugin {
   let outDir = 'dist';
   return {
@@ -29,6 +30,7 @@ function languagePages(): Plugin {
           .replace(/<html lang="[^"]*"/, `<html lang="${lang}"`)
           .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
           .replace(/(<meta name="description" content=")[^"]*"/, `$1${description}"`)
+          .replace(/(<link rel="canonical" href=")[^"]*"/, `$1${SITE}/${lang}/"`)
           .replace(/(<meta property="og:url" content=")[^"]*"/, `$1${SITE}/${lang}/"`)
           .replace(/(<meta property="og:title" content=")[^"]*"/, `$1${title}"`)
           .replace(/(<meta property="og:description" content=")[^"]*"/, `$1${description}"`);

@@ -125,8 +125,9 @@ h1.ai-line b { color: var(--blue); font-weight: 800; }
 .pill { padding: 4px 10px; border-radius: 999px; color: #fff; font-size: 13px; line-height: 1.25; font-weight: 600; background: var(--grey); white-space: nowrap; display: inline-block; }
 .p-price { white-space: nowrap; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .p-tag { font-size: 12px; font-weight: 600; white-space: nowrap; margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.p-chart { width: 100%; height: auto; aspect-ratio: 320 / 110; margin-top: 10px; display: block; }
+.p-chart { width: 100%; height: auto; aspect-ratio: 320 / 118; margin-top: 10px; display: block; }
 .p-chart .axis { font-size: 11px; }
+.p-chart .night { font-size: 9px; }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: 12px; color: var(--muted); white-space: nowrap; }
 .legend span { display: flex; align-items: center; gap: 6px; }
 .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
@@ -178,10 +179,15 @@ h1.ai-line b { color: var(--blue); font-weight: 800; }
 .chart-note { margin-top: 10px; font-size: 12.5px; color: var(--grey); }
 svg text { font-family: inherit; }
 .zlabel { font-size: 12px; font-weight: 700; }
-.axis { font-size: 11px; fill: #8b8f96; }
+.axis { font-size: 11px; fill: #8b8f96; font-variant-numeric: tabular-nums; }
+.axis.unit { font-weight: 600; }
+.grid { stroke: #e3e6eb; stroke-width: 1; }
+.grid.axis-line { stroke: #c4c8ce; }
+.night { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; fill: #a0a4ab; }
 .mark { font-size: 13px; font-weight: 700; fill: #1b1d21; }
 /* the big price chart scales down to ~0.8 on a laptop — give its text more size and a white halo on the marks */
 .chart-card .axis { font-size: 14px; fill: var(--muted); }
+.chart-card .night { font-size: 12px; }
 .chart-card .zlabel { font-size: 15px; }
 .chart-card .mark { font-size: 16px; paint-order: stroke fill; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
 

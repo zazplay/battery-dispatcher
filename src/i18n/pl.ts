@@ -59,6 +59,7 @@ export const pl: Dict = {
     empty: (p, tag) => `Magazyn na rezerwie 8 %. ${p} to ${tag}, ale nie ma już czego sprzedać.`,
   },
   panel: { title: 'Dyspozytor AI dla baterii', charges: 'AI ładuje', sells: 'AI sprzedaje', price: 'cena energii' },
+  chart: { unit: '€/kWh', night: 'noc' },
 
   strip: [
     { title: 'Plan co 15 minut', text: 'Przeliczany według rzeczywistego stanu naładowania i aktualnych cen.' },

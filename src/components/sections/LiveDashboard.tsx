@@ -39,7 +39,7 @@ export function LiveDashboard() {
             </div>
             <div className="dash-body">
               <div className="dash-chart">
-                <DayChart width={640} height={200} top={24} bottom={160} strokeWidth={1.8} ticks={['00', '12', '24']} cursor={{ hr: s.hr, price: s.price, color }} />
+                <DayChart width={640} height={210} top={30} bottom={170} strokeWidth={1.8} cursor={{ hr: s.hr, price: s.price, color }} />
                 <div className="legend">
                   <span><i style={{ background: '#16a34a' }} />{t.live.charging}</span>
                   <span><i style={{ background: '#3b6cff' }} />{t.live.selling}</span>

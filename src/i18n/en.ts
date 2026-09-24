@@ -63,6 +63,8 @@ export const en = {
     empty: (p: string, tag: string) => `Battery at the 8 % reserve. ${p} is ${tag}, but there is nothing left to sell.`,
   },
   panel: { title: 'AI battery dispatcher', charges: 'AI charges', sells: 'AI sells', price: 'electricity price' },
+  /* axes of the day charts */
+  chart: { unit: '€/kWh', night: 'night' },
 
   strip: [
     { title: 'Plans every 15 minutes', text: 'Re-optimizes with the real state of charge and the latest prices.' },

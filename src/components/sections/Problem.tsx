@@ -19,9 +19,8 @@ export function Problem() {
             top={44}
             bottom={220}
             strokeWidth={2}
-            ticks={['00:00', '06:00', '12:00', '18:00', '24:00']}
             marks={[
-              { hr: 13, text: t.problem.markNoon, anchor: 'middle' },
+              { hr: 13, text: t.problem.markNoon, anchor: 'middle', place: 'below' },
               { hr: 19.5, text: t.problem.markPeak, anchor: 'end' },
             ]}
             label={t.problem.chartLabel}

@@ -59,6 +59,7 @@ export const cs: Dict = {
     empty: (p, tag) => `Baterie na rezervě 8 %. ${p} je ${tag}, ale už není co prodat.`,
   },
   panel: { title: 'AI dispečer baterií', charges: 'AI nabíjí', sells: 'AI prodává', price: 'cena elektřiny' },
+  chart: { unit: '€/kWh', night: 'noc' },
 
   strip: [
     { title: 'Plán každých 15 minut', text: 'Přepočítává se podle skutečného stavu nabití a aktuálních cen.' },

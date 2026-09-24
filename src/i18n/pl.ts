@@ -8,7 +8,7 @@ const mwh = (n: number) => n.toFixed(1).replace('.', ',');
 export const pl: Dict = {
   code: 'pl',
   name: 'Polski',
-  meta: { title: 'Dyspozytor AI dla baterii · Azileon', description: 'Dyspozytor AI dla farm fotowoltaicznych z magazynem energii: ładuje w najtańszych godzinach, sprzedaje po szczytowej cenie dnia. Pod klucz od Azileon.' },
+  meta: { title: 'Zarządzanie magazynem energii przy PV – arbitraż RDN | Azileon', description: 'Dyspozytor AI dla farm PV z magazynem energii: ładuje w tanich godzinach, sprzedaje w szczycie RDN. Wdrożenie pod klucz, bez prowizji.' },
   eur: (n) => fmt(n) + ' €',
   price: (p) => dec(p) + ' €/kWh',
   priceShort: (p) => dec(p) + ' €',

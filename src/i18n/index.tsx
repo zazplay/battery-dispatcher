@@ -50,8 +50,10 @@ const Ctx = createContext<{ lang: Lang; t: Dict; setLang: (l: Lang) => void }>({
 /** The current dictionary for the whole page; the scene reads it through `currentDict` without re-rendering. */
 export let currentDict: Dict = en;
 
-export function LangProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(detect);
+/** `initialLang` — the language the page was prerendered in (the server entry passes it; the browser passes the one in the address).
+ *  Without it the language is detected from the address, the saved choice and the browser. */
+export function LangProvider({ children, initialLang }: { children: ReactNode; initialLang?: Lang }) {
+  const [lang, setLangState] = useState<Lang>(() => initialLang ?? detect());
   const setLang = (l: Lang) => {
     if (l === lang) return;
     setLangState(l);

@@ -9,8 +9,9 @@ const mwh = (n: number) => n.toFixed(1);
 export const en = {
   code: 'en',
   name: 'English',
-  /* <title> and the description of the page at /en/ — what a shared link previews as */
-  meta: { title: 'Battery Dispatcher · Azileon', description: "AI battery dispatcher for solar plants: charges in the cheapest hours, sells at the day's peak price. Delivered turnkey by Azileon." },
+  /* <title> and the description of the page at /en/ — what the search engines index and a shared link previews as.
+     Written with the words people search for, not the product name; index.html carries the same two strings. */
+  meta: { title: 'Battery energy management for solar plants | Azileon', description: 'AI dispatcher for PV plants with batteries: charges when power is cheap, sells at the day-ahead peak, respects your grid limit.' },
   // money & numbers
   eur: (n: number) => '€' + fmt(n),
   price,

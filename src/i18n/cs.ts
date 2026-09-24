@@ -8,7 +8,7 @@ const mwh = (n: number) => n.toFixed(1).replace('.', ',');
 export const cs: Dict = {
   code: 'cs',
   name: 'Čeština',
-  meta: { title: 'AI dispečer baterií · Azileon', description: 'AI dispečer baterií pro fotovoltaické elektrárny: nabíjí v nejlevnějších hodinách a prodává za nejvyšší cenu dne. Dodává na klíč Azileon.' },
+  meta: { title: 'Řízení baterie FVE podle spotových cen | Azileon', description: 'AI dispečer pro FVE s bateriovým úložištěm: nabíjí v levných hodinách, prodává ve špičce OTE, hlídá limit připojení. Na klíč, bez podílu z výnosu.' },
   eur: (n) => fmt(n) + ' €',
   price: (p) => dec(p) + ' €/kWh',
   priceShort: (p) => dec(p) + ' €',

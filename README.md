@@ -13,7 +13,7 @@ React 19 + Vite + TypeScript + three.js. Презентация-визитка �
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm run build    # проверка типов + сборка в dist/
+npm run build    # проверка типов + сборка в dist/ + пререндер языковых страниц (готовый HTML для поисковиков)
 npm run preview  # посмотреть собранную версию
 ```
 
@@ -49,6 +49,7 @@ sources/                исходные макеты и промпты (Claude 
 
 - Цифры и логика дня — `src/sim/day.ts` (кривая цены, пороги покупки/продажи, ёмкость батареи, мощность присоединения `GRID`). Темп: `DAY_SECONDS` и `NIGHT_SECONDS` там же. Сводка дня `DAY` (время продажи, пик, выручка, прирост к продаже «как есть») считается один раз при загрузке — журнал, чат и плитка результата берут цифры из неё, поэтому совпадают со сценой после любых правок модели.
 - Превью ссылки — `public/og.png` (1200×627) и OG-теги в `index.html`; сборка подставляет заголовок и описание языка в каждую копию. Шрифт Inter лежит в бандле (`@fontsource-variable/inter`), внешних запросов за шрифтами нет.
+- Поисковики — `dist/<lang>/index.html` содержит готовый текст страницы: `src/entry-server.tsx` рендерит React в строку, `scripts/prerender.mjs` вписывает её в `#root`, браузер гидратирует (`src/main.tsx`). Canonical, hreflang и JSON-LD (Organization + SoftwareApplication) — `index.html` и плагин `languagePages`. `public/robots.txt`, `public/sitemap.xml`. 3D-сцена грузится отдельным чанком после текста (`EnergyScene.tsx`).
 - Тексты — в словарях `src/i18n/{en,cs,pl,uk}.ts` (компоненты берут строки через `useT()`). Заголовок и описание страницы для ссылки — `meta` в каждом словаре.
 - Языковые адреса — `src/i18n/index.tsx` (`pathFor`, `langInPath`). Язык из адреса главнее сохранённого; корень `/` без языка берёт localStorage, затем язык браузера. Сборка кладёт копию `index.html` в `dist/<lang>/` с локализованными `<html lang>`, `<title>` и description — плагин `languagePages` в `vite.config.ts`.
 - Цвета и шрифты — токены в начале `src/styles.css`.

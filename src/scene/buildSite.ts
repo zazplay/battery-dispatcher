@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import type { Snapshot } from '../sim/day';
-import { VIEW_DIR } from './Stage';
 
 /* The energy site model from the original Claude Design mockup: solar arrays, six battery containers,
    PCS + AI controller cabinet, two pylons with overhead lines, buried cables with energy pulses. */
@@ -299,6 +298,9 @@ export function buildSite(): Site {
   // energy pulses: a glowing yellow orb with a soft halo and a lightning-bolt sprite (the second mockup's look)
   const orbGeo = new THREE.SphereGeometry(1.0, 24, 16);
   const orbMat = M('energy_orb', 0xfacc15, 0.3, 0, { emissive: 0xf5b301, emissiveIntensity: 0.9 });
+  // The bolt sprite sits exactly at the orb centre. The orb is drawn last among opaque objects and does not
+  // write depth, so the sprite passes the depth test against the orb but is still hidden behind a solar row.
+  orbMat.depthWrite = false;
   const boltTex = (() => {
     const c = document.createElement('canvas');
     c.width = c.height = 128;
@@ -318,7 +320,7 @@ export function buildSite(): Site {
     t.anisotropy = 4;
     return t;
   })();
-  // depthTest on (unlike the mockup) so a bolt behind a solar row is hidden by it; no depth write + alphaTest so its transparent corners don't cut holes in the halo
+  // depthTest on (unlike the mockup) so a bolt behind a solar row is hidden by it; no depth write so it never cuts holes in the halo
   const boltMat = new THREE.SpriteMaterial({ map: boltTex, depthTest: true, depthWrite: false, alphaTest: 0.2, transparent: true });
   const haloMat = new THREE.MeshBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0.3, depthWrite: false });
   const haloGeo = new THREE.SphereGeometry(1.45, 20, 14);
@@ -328,11 +330,9 @@ export function buildSite(): Site {
     for (let k = 0; k < n; k++) {
       const m = new THREE.Group();
       m.name = 'energy_orb';
-      const core = new THREE.Mesh(orbGeo, orbMat); core.name = 'orb_core'; noShadow(core); m.add(core);
+      const core = new THREE.Mesh(orbGeo, orbMat); core.name = 'orb_core'; core.renderOrder = 5; noShadow(core); m.add(core);
       const halo = new THREE.Mesh(haloGeo, haloMat); halo.name = 'orb_halo'; noShadow(halo); m.add(halo);
-      const bolt = new THREE.Sprite(boltMat); bolt.name = 'orb_bolt'; bolt.scale.set(1.7, 1.7, 1); bolt.renderOrder = 10;
-      bolt.position.copy(VIEW_DIR).multiplyScalar(1.6); // in front of the orb as seen from the camera, so the depth test passes against the orb but not against a panel
-      m.add(bolt);
+      const bolt = new THREE.Sprite(boltMat); bolt.name = 'orb_bolt'; bolt.scale.set(1.7, 1.7, 1); bolt.renderOrder = 10; m.add(bolt);
       fx.add(m);
       f.dashes.push({ m, off: k / n });
     }

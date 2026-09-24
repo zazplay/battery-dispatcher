@@ -58,7 +58,7 @@ export const uk: Dict = {
     hold: (p, tag, next, nextPrice) => `Чекає: ${p} — ${tag}. Наступний продаж о ${next} від ${nextPrice}.`,
     empty: (p, tag) => `Батарея на резерві 8 %. ${p} — ${tag}, але продавати вже нічого.`,
   },
-  panel: { title: 'AI-диспетчер батарей', charges: 'AI заряджає', sells: 'AI продає', price: 'ціна електроенергії' },
+  panel: { title: 'AI-диспетчер батарей', charges: 'AI заряджає', sells: 'AI продає' },
   chart: { unit: '€/кВт·год', night: 'ніч' },
 
   strip: [

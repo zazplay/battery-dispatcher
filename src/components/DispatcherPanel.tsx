@@ -20,11 +20,11 @@ export function DispatcherPanel() {
         <div className="p-price">{t.price(s.price)}</div>
         <div className="p-tag" style={{ color }}>{priceTag(s.price, t)}</div>
       </div>
-      <DayChart className="p-chart" width={320} height={118} top={24} bottom={98} compact cursor={{ hr: s.hr, price: s.price, color }} />
+      {/* a miniature: the curve, the windows and the cursor — the axes live on the big charts further down */}
+      <DayChart className="p-chart" width={320} height={110} top={14} bottom={92} compact cursor={{ hr: s.hr, price: s.price, color }} />
       <div className="legend">
         <span><i style={{ background: 'var(--green)' }} />{t.panel.charges}</span>
         <span><i style={{ background: 'var(--blue)' }} />{t.panel.sells}</span>
-        <span className="r">{t.panel.price}</span>
       </div>
     </div>
   );

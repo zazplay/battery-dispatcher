@@ -125,9 +125,8 @@ h1.ai-line b { color: var(--blue); font-weight: 800; }
 .pill { padding: 4px 10px; border-radius: 999px; color: #fff; font-size: 13px; line-height: 1.25; font-weight: 600; background: var(--grey); white-space: nowrap; display: inline-block; }
 .p-price { white-space: nowrap; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .p-tag { font-size: 12px; font-weight: 600; white-space: nowrap; margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.p-chart { width: 100%; height: auto; aspect-ratio: 320 / 118; margin-top: 10px; display: block; }
+.p-chart { width: 100%; height: auto; aspect-ratio: 320 / 110; margin-top: 10px; display: block; }
 .p-chart .axis { font-size: 11px; }
-.p-chart .night { font-size: 9px; }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: 12px; color: var(--muted); white-space: nowrap; }
 .legend span { display: flex; align-items: center; gap: 6px; }
 .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }

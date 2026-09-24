@@ -62,7 +62,7 @@ export const en = {
     hold: (p: string, tag: string, next: string, nextPrice: string) => `Waiting: ${p} is ${tag}. Next sale at ${next} from ${nextPrice}.`,
     empty: (p: string, tag: string) => `Battery at the 8 % reserve. ${p} is ${tag}, but there is nothing left to sell.`,
   },
-  panel: { title: 'AI battery dispatcher', charges: 'AI charges', sells: 'AI sells', price: 'electricity price' },
+  panel: { title: 'AI battery dispatcher', charges: 'AI charges', sells: 'AI sells' },
   /* axes of the day charts */
   chart: { unit: '€/kWh', night: 'night' },
 

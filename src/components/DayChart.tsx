@@ -14,8 +14,8 @@ interface Props {
   top: number; // y of the top of the price axis
   bottom: number; // y of zero
   strokeWidth?: number;
-  hourStep?: number; // an hour label every N hours (default 6)
-  compact?: boolean; // the small panel: "06" instead of "06:00", fewer price ticks, smaller margins
+  hourStep?: number; // an hour label every N hours (default 6, or 12 when compact)
+  compact?: boolean; // the small panel: only the curve, the zones and three hour marks — no price axis, grid or night labels
   zoneLabels?: boolean; // "charge" / "sell" above wide zones
   marks?: Mark[]; // highlighted points on the curve
   cursor?: { hr: number; price: number; color: string };
@@ -30,9 +30,11 @@ const Y_MAX = Math.ceil(pMax / Y_STEP) * Y_STEP;
 const PAD_R = 10;
 
 /** One day of electricity price with the dispatcher's charge / sell windows. Shared by the panel, the dashboard and the "why" section. */
-export function DayChart({ width, height, top, bottom, strokeWidth = 1.6, hourStep = 6, compact, zoneLabels, marks, cursor, className, label }: Props) {
+export function DayChart({ width, height, top, bottom, strokeWidth = 1.6, hourStep, compact, zoneLabels, marks, cursor, className, label }: Props) {
   const { t, lang } = useT();
-  const padL = compact ? 34 : 46; // room for the price labels
+  const axes = !compact;
+  const step = hourStep ?? (compact ? 12 : 6);
+  const padL = axes ? 46 : 8; // room for the price labels
   const x = (hr: number) => padL + (hr / 24) * (width - padL - PAD_R);
   const y = (p: number) => bottom - (p / Y_MAX) * (bottom - top);
   const num = (v: number) => (v ? v.toFixed(2).replace('.', lang === 'en' ? '.' : ',') : '0');
@@ -58,9 +60,9 @@ export function DayChart({ width, height, top, bottom, strokeWidth = 1.6, hourSt
   }, [width, top, bottom, padL]);
 
   const yTicks: number[] = [];
-  for (let v = 0; v <= Y_MAX + 1e-9; v += compact ? Y_STEP * 2 : Y_STEP) yTicks.push(v);
+  if (axes) for (let v = 0; v <= Y_MAX + 1e-9; v += Y_STEP) yTicks.push(v);
   const hours: number[] = [];
-  for (let h = 0; h <= 24; h += hourStep) hours.push(h);
+  for (let h = 0; h <= 24; h += step) hours.push(h);
   const hourLabel = (h: number) => String(h).padStart(2, '0') + (compact ? '' : ':00');
   const nights: [number, number][] = [[0, SUNRISE], [SUNSET, 24]];
   const bandTop = top - 8, bandH = bottom - top + 12;
@@ -73,7 +75,7 @@ export function DayChart({ width, height, top, bottom, strokeWidth = 1.6, hourSt
       {nights.map(([a, b]) => (
         <g key={a}>
           <rect x={x(a)} width={x(b) - x(a)} y={bandTop} height={bandH} fill="#1b1d21" fillOpacity={0.045} />
-          <text className="night" x={(x(a) + x(b)) / 2} y={headY} textAnchor="middle">{t.chart.night}</text>
+          {axes && <text className="night" x={(x(a) + x(b)) / 2} y={headY} textAnchor="middle">{t.chart.night}</text>}
         </g>
       ))}
       {zones.map((z, i) => (
@@ -86,7 +88,7 @@ export function DayChart({ width, height, top, bottom, strokeWidth = 1.6, hourSt
           <text className="axis" x={padL - 6} y={y(v) + 4} textAnchor="end">{num(v)}</text>
         </g>
       ))}
-      <text className="axis unit" x={2} y={headY} textAnchor="start">{t.chart.unit}</text>
+      {axes && <text className="axis unit" x={2} y={headY} textAnchor="start">{t.chart.unit}</text>}
       <path d={path} fill="none" stroke="#1b1d21" strokeWidth={strokeWidth} />
       {zoneLabels &&
         zones
@@ -115,7 +117,7 @@ export function DayChart({ width, height, top, bottom, strokeWidth = 1.6, hourSt
         </>
       )}
       {/* time axis: a baseline and an hour label every `hourStep` hours */}
-      <line className="grid axis-line" x1={padL} x2={width - PAD_R} y1={bottom + 4} y2={bottom + 4} />
+      {axes && <line className="grid axis-line" x1={padL} x2={width - PAD_R} y1={bottom + 4} y2={bottom + 4} />}
       {hours.map((h) => (
         <text key={h} className="axis" x={x(h)} y={axisY} textAnchor={h === 0 ? 'start' : h === 24 ? 'end' : 'middle'}>
           {hourLabel(h)}

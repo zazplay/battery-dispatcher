@@ -58,7 +58,7 @@ export const pl: Dict = {
     hold: (p, tag, next, nextPrice) => `Czeka: ${p} to ${tag}. Następna sprzedaż o ${next} od ${nextPrice}.`,
     empty: (p, tag) => `Magazyn na rezerwie 8 %. ${p} to ${tag}, ale nie ma już czego sprzedać.`,
   },
-  panel: { title: 'Dyspozytor AI dla baterii', charges: 'AI ładuje', sells: 'AI sprzedaje', price: 'cena energii' },
+  panel: { title: 'Dyspozytor AI dla baterii', charges: 'AI ładuje', sells: 'AI sprzedaje' },
   chart: { unit: '€/kWh', night: 'noc' },
 
   strip: [

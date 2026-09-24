@@ -58,7 +58,7 @@ export const cs: Dict = {
     hold: (p, tag, next, nextPrice) => `Čeká: ${p} je ${tag}. Další prodej v ${next} od ${nextPrice}.`,
     empty: (p, tag) => `Baterie na rezervě 8 %. ${p} je ${tag}, ale už není co prodat.`,
   },
-  panel: { title: 'AI dispečer baterií', charges: 'AI nabíjí', sells: 'AI prodává', price: 'cena elektřiny' },
+  panel: { title: 'AI dispečer baterií', charges: 'AI nabíjí', sells: 'AI prodává' },
   chart: { unit: '€/kWh', night: 'noc' },
 
   strip: [

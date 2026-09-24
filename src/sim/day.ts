@@ -41,11 +41,21 @@ export const sellT = pMin + (pMax - pMin) * 0.62;
 
 export type Mode = 'charge' | 'sell' | 'hold';
 
-/** What the dispatcher plans for a given hour — used to paint the chart zones. Charge only in the cheapest hours
- *  (the battery holds less than the day's solar, so the dearer morning output is sold as it comes), sell at the
- *  evening peak. The battery sold out the evening before, so the high morning prices carry no zone. */
+/* The plan's two windows, found once at minute resolution. Charging opens when the price first drops into the cheap
+   band (the battery holds less than the day's solar, so the dearer morning output is sold as it comes) and runs
+   straight into the evening sale — filling in the cheap hours, holding once full. The sale lasts while the price
+   stays at the peak level. The battery sold out the evening before, so the high morning prices carry no window. */
+const firstHour = (from: number, to: number, test: (h: number) => boolean) => {
+  for (let h = from; h < to; h += 1 / 60) if (test(h)) return h;
+  return to;
+};
+export const CHARGE_FROM = firstHour(SUNRISE, 12, (h) => price(h) <= buyT && solar(h) > 0.05);
+export const SELL_FROM = firstHour(12, 24, (h) => price(h) >= sellT);
+export const SELL_TO = firstHour(SELL_FROM, 24, (h) => price(h) < sellT);
+
+/** What the dispatcher plans for a given hour — paints the chart zones and drives the simulation. */
 export const plan = (hr: number): Mode | null =>
-  price(hr) >= sellT ? (hr >= 12 ? 'sell' : null) : price(hr) <= buyT && solar(hr) > 0.05 ? 'charge' : null;
+  hr >= SELL_FROM && hr < SELL_TO ? 'sell' : hr >= CHARGE_FROM && hr < SELL_FROM ? 'charge' : null;
 
 /** Colour of each mode; the labels live in the dictionaries (t.modes). */
 export const MODE_COLOR: Record<Mode, string> = { charge: '#16a34a', sell: '#3b6cff', hold: '#8b8f96' };
@@ -126,12 +136,13 @@ export class DaySim {
     const pv = solar(hr);
     let mode: Mode = 'hold';
     let batP = 0;
-    if (p >= sellT && this.soc > RESERVE) {
+    const window = plan(hr);
+    if (window === 'sell' && this.soc > RESERVE) {
       mode = 'sell';
       // discharge only into the room the grid connection leaves next to the solar output
       batP = -Math.min(PMAX, Math.max(0, GRID - pv), (this.soc * CAP) / Math.max(dh, 1e-3));
-    } else if (p <= buyT && pv > 0.05 && this.soc < 0.98) {
-      mode = 'charge'; // the cheapest hours fill the battery; solar at other times goes to the grid
+    } else if (window === 'charge' && pv > 0.05 && this.soc < 0.98) {
+      mode = 'charge'; // the cheap hours fill the battery; once full it holds, and solar goes to the grid
       batP = Math.min(pv, PMAX);
     }
     this.soc = Math.min(1, Math.max(0, this.soc + (batP * dh) / CAP));

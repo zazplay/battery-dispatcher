@@ -135,13 +135,13 @@ export const pl: Dict = {
     phone: {
       from: 'Dyspozytor AI · Kolín — Farma Jih',
       time: '10:42',
-      text: 'Falownik 3, string 7 od 10:40 produkuje o 12 % mniej niż sąsiednie. Izolacja w normie, więc to nie zwarcie doziemne — najpewniej zacienienie lub uszkodzony moduł. Sprawdź złącza w rzędzie 2. Strata dotąd: 4 kWh.',
+      text: 'Falownik 3, string 7: 612 V — o 12 % mniej niż sąsiednie od 10:40. Rezystancja izolacji 1,8 MΩ, w normie — więc to nie zwarcie doziemne, najpewniej zacienienie lub uszkodzony moduł. Sprawdź złącza w rzędzie 2. Strata dotąd: 4 kWh.',
       actions: ['Potwierdź', 'Otwórz obiekt'],
     },
     journalTitle: 'Dziennik · dziś',
     journal: [
-      ['06:10', 'Poranny autotest: wszystkie falowniki OK', 'ok'],
-      ['10:42', 'String 7 na falowniku 3 o 12 % poniżej sąsiednich → alert do technika (Telegram)', 'alert'],
+      ['06:10', 'Poranny autotest: izolacja 2,1 MΩ, wszystkie falowniki OK', 'ok'],
+      ['10:42', 'String 7 na falowniku 3: 612 V, o 12 % poniżej sąsiednich → alert do technika (Telegram)', 'alert'],
       ['11:15', 'Technik: cień od dźwigu na obiekcie, bez działań — kontrola o 14:00', 'note'],
       ['12:30', 'Rack bateryjny 2: ogniwa niezbalansowane — balansowanie uruchomione automatycznie', 'ok'],
       ['13:05', 'Ładowanie z sieci po −4 €/MWh, bateria pełna do 15:00', 'ok'],

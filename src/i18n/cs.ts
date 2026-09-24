@@ -135,13 +135,13 @@ export const cs: Dict = {
     phone: {
       from: 'AI dispečer · Kolín — Farma Jih',
       time: '10:42',
-      text: 'Střídač 3, string 7 vyrábí od 10:40 o 12 % méně než sousední. Izolace je v pořádku, takže to není zemní porucha — nejspíš zastínění nebo vadný modul. Zkontrolujte konektory na řadě 2. Ztráta zatím: 4 kWh.',
+      text: 'Střídač 3, string 7: 612 V — o 12 % níž než sousední od 10:40. Izolační odpor 1,8 MΩ, v normě — takže to není zemní porucha, nejspíš zastínění nebo vadný modul. Zkontrolujte konektory na řadě 2. Ztráta zatím: 4 kWh.',
       actions: ['Potvrdit', 'Otevřít lokalitu'],
     },
     journalTitle: 'Deník · dnes',
     journal: [
-      ['06:10', 'Ranní autotest: všechny střídače OK', 'ok'],
-      ['10:42', 'String 7 na střídači 3 je o 12 % níž než sousední → upozornění technikovi (Telegram)', 'alert'],
+      ['06:10', 'Ranní autotest: izolace 2,1 MΩ, všechny střídače OK', 'ok'],
+      ['10:42', 'String 7 na střídači 3: 612 V, o 12 % níž než sousední → upozornění technikovi (Telegram)', 'alert'],
       ['11:15', 'Technik: stín od jeřábu na místě, bez zásahu — kontrola ve 14:00', 'note'],
       ['12:30', 'Bateriový rack 2: články nevyvážené — balancování spuštěno automaticky', 'ok'],
       ['13:05', 'Nabíjení ze sítě za −4 €/MWh, baterie plná do 15:00', 'ok'],

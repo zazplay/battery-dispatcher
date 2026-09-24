@@ -134,13 +134,13 @@ export const en = {
     phone: {
       from: 'AI dispatcher · Kolín — Farma Jih',
       time: '10:42',
-      text: 'Inverter 3, string 7 has been producing 12 % less than its neighbours since 10:40. Insulation is fine, so it is not a ground fault — most likely a shaded or failed module. Check the connectors on row 2. Lost so far: 4 kWh.',
+      text: 'Inverter 3, string 7: 612 V — 12 % below its neighbours since 10:40. Insulation resistance 1.8 MΩ, normal — so not a ground fault, most likely a shaded or failed module. Check the connectors on row 2. Lost so far: 4 kWh.',
       actions: ['Acknowledge', 'Open site'],
     },
     journalTitle: 'Journal · today',
     journal: [
-      ['06:10', 'Morning self-test: all inverters OK', 'ok'],
-      ['10:42', 'String 7 on inverter 3 is 12 % below its neighbours → alert to the technician (Telegram)', 'alert'],
+      ['06:10', 'Morning self-test: insulation 2.1 MΩ, all inverters OK', 'ok'],
+      ['10:42', 'String 7 on inverter 3: 612 V, 12 % below its neighbours → alert to the technician (Telegram)', 'alert'],
       ['11:15', 'Technician: shading from a crane on site, no action — re-check at 14:00', 'note'],
       ['12:30', 'Battery rack 2: cells out of balance — balancing started automatically', 'ok'],
       ['13:05', 'Charging from the grid at −4 €/MWh, battery full by 15:00', 'ok'],

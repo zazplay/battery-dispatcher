@@ -8,7 +8,7 @@ const VISIT_ICONS = [MapPin, Search, Wrench];
 export function Turnkey() {
   const { t } = useT();
   return (
-    <section className="sec" id="turnkey">
+    <section className="sec alt" id="turnkey">
       <div className="wrap">
         <p className="eyebrow">{t.turnkey.eyebrow}</p>
         <h2>{t.turnkey.title}</h2>

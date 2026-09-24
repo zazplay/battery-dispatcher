@@ -8,7 +8,7 @@ const NOTE_ICONS = [MessageSquare, ShieldCheck, Hand];
 export function AiChat() {
   const { t } = useT();
   return (
-    <section className="sec alt" id="ai">
+    <section className="sec" id="ai">
       <div className="wrap center">
         <p className="eyebrow"><Sparkles aria-hidden="true" /> {t.ai.eyebrow}</p>
         <h2>{t.ai.title}</h2>

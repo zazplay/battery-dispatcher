@@ -5,7 +5,7 @@ import { Rich, useT } from '../../i18n';
 export function Contact() {
   const { t } = useT();
   return (
-    <section className="sec alt" id="contact">
+    <section className="sec" id="contact">
       <div className="wrap">
         <div className="cta">
           <div>

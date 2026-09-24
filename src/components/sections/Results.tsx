@@ -7,7 +7,7 @@ const ICONS = [TrendingUp, Sun, Timer];
 export function Results() {
   const { t } = useT();
   return (
-    <section className="sec alt" id="results">
+    <section className="sec" id="results">
       <div className="wrap">
         <p className="eyebrow">{t.results.eyebrow}</p>
         <h2>{t.results.title}</h2>

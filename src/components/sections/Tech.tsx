@@ -8,7 +8,7 @@ const ICONS = [Usb, Cpu, Cable, Layers, Radio, Cloud, Gauge, Signal];
 export function Tech() {
   const { t } = useT();
   return (
-    <section className="sec" id="tech">
+    <section className="sec alt" id="tech">
       <div className="wrap">
         <p className="eyebrow">{t.tech.eyebrow}</p>
         <h2>{t.tech.title}</h2>

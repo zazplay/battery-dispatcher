@@ -35,10 +35,10 @@ export const pl: Dict = {
   },
   aiNote: 'Notatka AI',
   sceneAlerts: [
-    { title: 'Rząd 2 produkuje mniej', note: 'Rząd 2 produkuje o 12 % mniej, niż powinien — panele są pewnie brudne, zaplanowano mycie.' },
+    { title: 'Rząd 2 produkuje mniej', note: 'Rząd 2 produkuje o 12 % mniej, niż powinien — panele mogą być brudne lub zacienione, warto sprawdzić.' },
     { title: 'Zapad napięcia w sieci · 0,91 pu', note: 'Zapad napięcia w sieci — eksport ograniczony do 400 kW, aż napięcie wróci do normy.' },
-    { title: 'Niskie napięcie ogniw · Bateria 3', note: 'Niskie napięcie ogniw w baterii 3 — rack odłączony, trwa balansowanie.' },
-    { title: 'Wysoka temperatura · Bateria 5', note: 'Bateria 5 ma 47 °C — chłodzenie wzmocnione, ładowanie spowolnione.' },
+    { title: 'Niskie napięcie ogniw · Bateria 3', note: 'Niskie napięcie ogniw w baterii 3 — balansowanie uruchomione. Jeśli się powtórzy, sprawdź rack.' },
+    { title: 'Wysoka temperatura · Bateria 5', note: 'Bateria 5 ma 47 °C — ładowanie spowolnione, sprawdź chłodzenie.' },
     { title: 'Zbliża się szczyt cenowy', note: 'Szczyt ceny o 19:00 — sprzedajemy 18:00–21:00.' },
     { title: 'Wszystko w normie', note: 'Wszystko rozwiązane. Raport dzienny wysłany.' },
   ],

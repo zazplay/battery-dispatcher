@@ -35,10 +35,10 @@ export const cs: Dict = {
   },
   aiNote: 'Poznámka AI',
   sceneAlerts: [
-    { title: 'Řada 2 vyrábí méně', note: 'Řada 2 vyrábí o 12 % méně, než by měla — panely jsou nejspíš špinavé, naplánováno mytí.' },
+    { title: 'Řada 2 vyrábí méně', note: 'Řada 2 vyrábí o 12 % méně, než by měla — panely mohou být špinavé nebo zastíněné, stojí za kontrolu.' },
     { title: 'Pokles napětí v síti · 0,91 pu', note: 'Pokles napětí v síti — export omezen na 400 kW, dokud se napětí nevrátí do normy.' },
-    { title: 'Nízké napětí článků · Baterie 3', note: 'Nízké napětí článků v baterii 3 — rack odpojen, články se vyrovnávají.' },
-    { title: 'Vysoká teplota · Baterie 5', note: 'Baterie 5 má 47 °C — chlazení posíleno, nabíjení zpomaleno.' },
+    { title: 'Nízké napětí článků · Baterie 3', note: 'Nízké napětí článků v baterii 3 — spuštěno vyrovnávání. Pokud se to bude opakovat, zkontrolujte rack.' },
+    { title: 'Vysoká teplota · Baterie 5', note: 'Baterie 5 má 47 °C — nabíjení zpomaleno, zkontrolujte chlazení.' },
     { title: 'Blíží se cenová špička', note: 'Cenová špička v 19:00 — prodáváme 18:00–21:00.' },
     { title: 'Vše v pořádku', note: 'Vše vyřešeno. Denní přehled odeslán.' },
   ],

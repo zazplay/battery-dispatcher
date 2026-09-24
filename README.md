@@ -1,6 +1,10 @@
 # Battery Dispatcher — landing
 
-**Live:** https://zazplay.github.io/battery-dispatcher/ — публикуется автоматически из ветки `main` (GitHub Actions → Pages).
+**Live:** https://battery.azileon.cz/ — публикуется автоматически из ветки `main` (GitHub Actions → Pages, сайт отдаётся из корня домена).
+
+У каждого языка свой адрес — эти ссылки и отправляют клиентам:
+[/en/](https://battery.azileon.cz/en/) · [/cs/](https://battery.azileon.cz/cs/) · [/pl/](https://battery.azileon.cz/pl/) · [/uk/](https://battery.azileon.cz/uk/).
+Корень без языка открывает сохранённый или браузерный язык и подставляет его в адрес.
 
 React 19 + Vite + TypeScript + three.js. Презентация-визитка системы управления батареями солнечных станций «под ключ» — страница, которую отправляют клиентам (не основной сайт компании). Первый экран — 3D-макет станции (панели, накопители, ЛЭП, ИИ-контроллер) с живой симуляцией одного дня: цикл начинается с восхода, светлое время идёт 64 секунды, ночь прокручивается за 6.
 
@@ -36,6 +40,7 @@ src/
                         Contact (карточка с контактами, без формы), Footer
   Иконки — lucide-react (import { Zap } from 'lucide-react'), обёртка .ico / .ico.g в styles.css
   i18n/                 словари en / cs / pl / uk (en.ts задаёт форму), LangProvider, useT(), <Rich> для **жирного**, LangSwitch
+                        язык берётся из пути (/uk/), переключатель меняет адрес без перезагрузки (pushState)
   styles.css            токены и стили страницы
 sources/                исходные макеты и промпты (Claude Design экспорт, распакованная сцена, первая HTML-версия)
 ```
@@ -43,6 +48,7 @@ sources/                исходные макеты и промпты (Claude 
 ## Где что менять
 
 - Цифры и логика дня — `src/sim/day.ts` (кривая цены, пороги покупки/продажи, ёмкость батареи). Темп: `DAY_SECONDS` и `NIGHT_SECONDS` там же.
-- Тексты — в словарях `src/i18n/{en,cs,pl,uk}.ts` (компоненты берут строки через `useT()`). Язык определяется по браузеру, выбор запоминается в localStorage.
+- Тексты — в словарях `src/i18n/{en,cs,pl,uk}.ts` (компоненты берут строки через `useT()`). Заголовок и описание страницы для ссылки — `meta` в каждом словаре.
+- Языковые адреса — `src/i18n/index.tsx` (`pathFor`, `langInPath`). Язык из адреса главнее сохранённого; корень `/` без языка берёт localStorage, затем язык браузера. Сборка кладёт копию `index.html` в `dist/<lang>/` с локализованными `<html lang>`, `<title>` и description — плагин `languagePages` в `vite.config.ts`.
 - Цвета и шрифты — токены в начале `src/styles.css`.
 - Вернуть вращение сцены мышью — `interactive` в `src/scene/Stage.ts` (метод `enableOrbit`).

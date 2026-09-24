@@ -6,6 +6,7 @@ const dec = (p: number) => p.toFixed(3).replace('.', ',');
 export const cs: Dict = {
   code: 'cs',
   name: 'Čeština',
+  meta: { title: 'AI dispečer baterií · Azileon', description: 'AI dispečer baterií pro fotovoltaické elektrárny: nabíjí v nejlevnějších hodinách a prodává za nejvyšší cenu dne. Dodává na klíč Azileon.' },
   eur: (n) => fmt(n) + ' €',
   price: (p) => dec(p) + ' €/kWh',
   priceShort: (p) => dec(p) + ' €',

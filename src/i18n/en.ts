@@ -4,6 +4,8 @@ const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 0 
 export const en = {
   code: 'en',
   name: 'English',
+  /* <title> and the description of the page at /en/ — what a shared link previews as */
+  meta: { title: 'Battery Dispatcher · Azileon', description: "AI battery dispatcher for solar plants: charges in the cheapest hours, sells at the day's peak price. Delivered turnkey by Azileon." },
   // money & numbers
   eur: (n: number) => '€' + fmt(n),
   price: (p: number) => '€' + p.toFixed(3) + '/kWh',

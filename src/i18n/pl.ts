@@ -6,6 +6,7 @@ const dec = (p: number) => p.toFixed(3).replace('.', ',');
 export const pl: Dict = {
   code: 'pl',
   name: 'Polski',
+  meta: { title: 'Dyspozytor AI dla baterii · Azileon', description: 'Dyspozytor AI dla farm fotowoltaicznych z magazynem energii: ładuje w najtańszych godzinach, sprzedaje po szczytowej cenie dnia. Pod klucz od Azileon.' },
   eur: (n) => fmt(n) + ' €',
   price: (p) => dec(p) + ' €/kWh',
   priceShort: (p) => dec(p) + ' €',

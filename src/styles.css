@@ -48,7 +48,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
    ===================================================================== */
 .hero { margin-inline: -16px; display: grid; grid-template-columns: 380px 1fr; grid-template-rows: auto 1fr auto; grid-template-areas: "card stage" "cta stage" "panel stage"; min-height: 100vh; min-height: 100svh; background: var(--bg); }
 .hero-card { grid-area: card; align-self: start; padding: 24px 20px 0 28px; }
-.hero-cta { grid-area: cta; align-self: start; padding: 20px 24px 0 28px; }
+.hero-cta { grid-area: cta; align-self: start; padding: 20px 20px 0 28px; } /* the two buttons must share one row in every language */
 /* brand left, language switcher right; the switcher wraps under the brand rather than run past the column (380 px on desktop) */
 .hero-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 10px; }
 .brand { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 16px; color: var(--ink); }

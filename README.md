@@ -35,12 +35,15 @@ src/
     LogoMarquee.tsx     бегущая лента производителей под первым экраном (simple-icons + текстовые марки)
     AiLogos.tsx         знаки OpenAI / Claude / Gemini в бейдже первого экрана
     Flag.tsx            маленькие SVG-флаги (GB / CZ / PL / UA) — переключатель языков и карточки цен
+    LangSwitch.tsx      переключатель языков (EN · CZ · PL · UA с флагами) — ссылки на адрес каждого языка (/uk/), клик
+                        меняет адрес без перезагрузки; выделение — линза из «жидкого стекла», как карточки AI note
+                        на сцене, скользит к выбранному языку с пружиной
     sections/           Strip, Problem, HowItWorks, LiveDashboard, Features, Diagnostics (AI-диагностика),
                         AiChat, Tech (донглы, шлюз, протоколы), Results, Turnkey (+ карточка «приедем на объект»),
                         Contact (карточка с контактами, без формы), Footer
   Иконки — lucide-react (import { Zap } from 'lucide-react'), обёртка .ico / .ico.g в styles.css
-  i18n/                 словари en / cs / pl / uk (en.ts задаёт форму), LangProvider, useT(), <Rich> для **жирного**, LangSwitch
-                        язык берётся из пути (/uk/), переключатель меняет адрес без перезагрузки (pushState)
+  i18n/                 словари en / cs / pl / uk (en.ts задаёт форму), LangProvider, useT(), <Rich> для **жирного**,
+                        pathFor()/langInPath(): язык берётся из пути (/uk/), смена языка меняет адрес (pushState)
   styles.css            токены и стили страницы
 sources/                исходные макеты и промпты (Claude Design экспорт, распакованная сцена, первая HTML-версия)
 ```

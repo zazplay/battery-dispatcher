@@ -2,7 +2,8 @@ import { AiLogos } from './AiLogos';
 import { EnergyScene } from './EnergyScene';
 import { DispatcherPanel } from './DispatcherPanel';
 import { SceneStats } from './SceneStats';
-import { LangSwitch, Rich, useT } from '../i18n';
+import { LangSwitch } from './LangSwitch';
+import { Rich, useT } from '../i18n';
 import { mailto } from '../company';
 
 export function Hero() {

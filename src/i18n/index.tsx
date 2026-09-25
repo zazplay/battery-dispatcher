@@ -1,10 +1,11 @@
-import { createContext, useContext, useEffect, useMemo, useState, Fragment, type MouseEvent, type ReactNode } from 'react';
-import { Flag, type Country } from '../components/Flag';
+import { createContext, useContext, useEffect, useMemo, useState, Fragment, type ReactNode } from 'react';
 import { en, type Dict } from './en';
 import { cs } from './cs';
 import { pl } from './pl';
 import { uk } from './uk';
 
+/* Internal codes are the ISO language ones ("cs", "uk" — used for <html lang> and the address); the switcher
+   (components/LangSwitch.tsx) shows them as country-style "CZ" and "UA" with flags. */
 export type Lang = 'en' | 'cs' | 'pl' | 'uk';
 export const DICTS: Record<Lang, Dict> = { en, cs, pl, uk };
 export const LANGS: Lang[] = ['en', 'cs', 'pl', 'uk'];
@@ -93,29 +94,4 @@ export const useT = () => useContext(Ctx);
 export function Rich({ text }: { text: string }) {
   const parts = text.split('**');
   return <>{parts.map((p, i) => (i % 2 ? <b key={i}>{p}</b> : <Fragment key={i}>{p}</Fragment>))}</>;
-}
-
-/* What the switcher shows: a flag and a country-style code people recognise. The internal codes stay the ISO
-   language ones ("cs", "uk" — used for <html lang> and the address), the links say "CZ" and "UA". */
-const SHORT: Record<Lang, string> = { en: 'EN', cs: 'CZ', pl: 'PL', uk: 'UA' };
-const FLAG: Record<Lang, Country> = { en: 'gb', cs: 'cz', pl: 'pl', uk: 'ua' };
-
-/** Links to the page in each language: a right click copies the address, a plain click switches in place. */
-export function LangSwitch() {
-  const { lang, setLang } = useT();
-  const pick = (l: Lang) => (e: MouseEvent<HTMLAnchorElement>) => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // "open in a new tab" keeps working
-    e.preventDefault();
-    setLang(l);
-  };
-  return (
-    <nav className="lang" aria-label="Language">
-      {LANGS.map((l) => (
-        <a key={l} href={pathFor(l)} hrefLang={l} className={l === lang ? 'on' : ''} aria-current={l === lang ? 'page' : undefined} onClick={pick(l)}>
-          <Flag of={FLAG[l]} className="sm" />
-          {SHORT[l]}
-        </a>
-      ))}
-    </nav>
-  );
 }

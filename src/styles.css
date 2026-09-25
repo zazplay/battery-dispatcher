@@ -53,14 +53,21 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .hero-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 10px; }
 .brand { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 16px; color: var(--ink); }
 .brand svg { width: 24px; height: 24px; }
-/* the switcher is a row of links (each language has its own address): a small flag and a country-style code */
-.lang { display: flex; gap: 2px; margin-left: auto; padding: 3px; border-radius: 999px; background: var(--bg2); border: 1px solid var(--line); }
-.lang a { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; line-height: 1.2; font-weight: 700; letter-spacing: 0.02em; padding: 5px 8px 5px 7px; border-radius: 999px; color: var(--muted); text-decoration: none; transition: color 0.15s, background-color 0.15s, box-shadow 0.15s; }
+/* language switcher (components/LangSwitch.tsx): a row of links in a pill (each language has its own address); the
+   selection is a liquid-glass lens like the AI-note cards on the scene — translucent white, a light rim, a soft shadow —
+   that slides to the chosen language with a small spring. Safe to blur here: the pill sits on the white card, not on
+   the WebGL canvas. */
+.lang { position: relative; display: flex; gap: 2px; margin-left: auto; padding: 3px; border-radius: 999px; background: var(--bg2); border: 1px solid var(--line); }
+.lang a { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; line-height: 1.2; font-weight: 700; letter-spacing: 0.02em; padding: 5px 8px 5px 7px; border-radius: 999px; color: var(--muted); text-decoration: none; transition: color 0.15s; }
 .lang a:hover:not(.on) { color: var(--ink); }
 .lang a:focus-visible { outline-width: 2px; outline-offset: -2px; }
-.lang a.on { background: var(--card); color: var(--blue); box-shadow: 0 1px 3px rgba(30, 50, 90, 0.12); }
+.lang a.on { color: var(--blue); }
 .lang a:not(.on) .flag { opacity: 0.75; }
 .lang a:hover .flag { opacity: 1; }
+.lang-lens { position: absolute; top: 3px; bottom: 3px; left: 0; width: 0; border-radius: 999px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.8)); border: 1px solid rgba(255, 255, 255, 0.95); box-shadow: 0 4px 12px rgba(30, 50, 90, 0.14), 0 1px 2px rgba(30, 50, 90, 0.08), inset 0 1px 0 #fff, inset 0 -1px 0 rgba(59, 108, 255, 0.08); -webkit-backdrop-filter: blur(8px) saturate(1.4); backdrop-filter: blur(8px) saturate(1.4); pointer-events: none; }
+/* only a click animates the lens (the class lasts until the squash ends, which outlasts the slide); a resize or a font load re-places it instantly */
+.lang-lens.moving { transition: left 0.45s cubic-bezier(0.3, 1.4, 0.5, 1), width 0.45s cubic-bezier(0.3, 1.4, 0.5, 1); animation: lensSquash 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.15); } /* the glass stretches a little on the way, like a drop */
+@keyframes lensSquash { 0% { transform: scale(1); } 40% { transform: scaleX(1.1) scaleY(0.92); } 100% { transform: scale(1); } }
 
 /* inline flags (see components/Flag.tsx): large on the dark market cards, small in the language switcher */
 .flag { width: 36px; height: 24px; border-radius: 5px; overflow: hidden; flex: none; display: block; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2); }
@@ -362,7 +369,8 @@ footer a { color: inherit; padding-block: 8px; }
   html { scroll-behavior: auto; }
   .marquee-row { animation: none; }
   .reveal { transform: none; transition: none; }
-  .btn, .lang a { transition: none; }
+  .btn, .lang a, .lang-lens { transition: none; }
+  .lang-lens { animation: none; }
 }
 
 /* =====================================================================
@@ -381,7 +389,8 @@ footer a { color: inherit; padding-block: 8px; }
 }
 @media (max-width: 860px) {
   .sec { padding-block: 56px; }
-  .hero { grid-template-columns: 1fr; grid-template-rows: auto auto auto auto auto; grid-template-areas: "card" "stage" "stats" "panel" "cta"; min-height: 0; }
+  /* minmax(0, 1fr): a long no-wrap line (price tag, money bar) must not widen the page past the screen */
+  .hero { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto auto auto; grid-template-areas: "card" "stage" "stats" "panel" "cta"; min-height: 0; }
   .hero-card { padding: 22px 16px 18px; }
   .hero-cta { padding: 4px 16px 20px; }
   .stage-wrap { height: 62vh; height: 62svh; min-height: 360px; align-self: auto; border-left: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
@@ -413,9 +422,9 @@ footer a { color: inherit; padding-block: 8px; }
 @media (max-width: 700px) {
   .hero { padding-bottom: 0; }
   .hero-card { padding: 16px 16px 12px; }
-  .hero-top { margin-bottom: 4px; }
+  .hero-top { margin-bottom: 4px; gap: 8px; }
   .brand { font-size: 15px; }
-  .lang a { padding: 8px 9px 8px 7px; line-height: 1.35; }
+  .lang a { padding: 8px 7px 8px 6px; gap: 4px; line-height: 1.35; } /* brand + switcher fit one row from 360 px */
   .ai-badge { margin-top: 16px; }
   h1.ai-line { font-size: 19px; margin-top: 12px; max-width: none; }
   .hero-cta { padding: 12px 16px 24px; }

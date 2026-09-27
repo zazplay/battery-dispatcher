@@ -156,7 +156,7 @@ export const cs: Dict = {
     journalTitle: 'Deník · dnes',
     journal: [
       ['06:10', 'Ranní autotest: izolace 2,1 MΩ, všechny střídače v pořádku', 'ok'],
-      [DAY.chargeFrom, `Cena pod ${dec(buyT)} €/kWh — energie ze slunce teď jde do baterie`, 'ok'],
+      [DAY.chargeFrom, `Cena pod ${dec(buyT)} €/kWh — část energie ze slunce teď nabíjí baterii, zbytek jde do sítě`, 'ok'],
       ['10:42', 'String 7 na střídači 3: 612 V, o 12 % méně než sousední → upozornění technikovi (Telegram)', 'alert'],
       ['11:15', 'Technik: stín od jeřábu na místě, bez zásahu — kontrola ve 14:00', 'note'],
       [DAY.fullClock, 'Baterie plná ze slunce — držíme na večerní špičku', 'ok'],

@@ -156,7 +156,7 @@ export const pl: Dict = {
     journalTitle: 'Dziennik · dziś',
     journal: [
       ['06:10', 'Poranny autotest: izolacja 2,1 MΩ, wszystkie falowniki OK', 'ok'],
-      [DAY.chargeFrom, `Cena poniżej ${dec(buyT)} €/kWh — energia z PV trafia teraz do magazynu`, 'ok'],
+      [DAY.chargeFrom, `Cena poniżej ${dec(buyT)} €/kWh — część energii z PV ładuje teraz magazyn, reszta idzie do sieci`, 'ok'],
       ['10:42', 'String 7 na falowniku 3: 612 V, o 12 % mniej niż sąsiednie → alert do technika (Telegram)', 'alert'],
       ['11:15', 'Technik: cień od dźwigu na obiekcie, bez działań — kontrola o 14:00', 'note'],
       [DAY.fullClock, 'Magazyn pełny z PV — czekamy na wieczorny szczyt', 'ok'],

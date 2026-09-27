@@ -5,7 +5,7 @@ import type { Dict } from '../i18n/en';
 export const CAP = 2.4; // battery capacity, MWh
 export const PMAX = 1.2; // battery inverter (PCS) power, MW
 export const GRID = 1.0; // grid connection, MW — the export never goes above it
-export const PV_PEAK = 0.85; // MW a 1 MWp plant gives at noon on a clear September day (~6.5 MWh over the day)
+export const PV_PEAK = 0.87; // MW a 1 MWp plant gives at noon on a clear September day (~6.5 MWh over the day)
 export const SUNRISE = 7, SUNSET = 19;
 
 /* Pacing: the loop starts before sunrise, daytime runs slowly, the night is fast-forwarded. */
@@ -57,6 +57,36 @@ export const SELL_TO = firstHour(SELL_FROM, 24, (h) => price(h) < sellT);
 export const plan = (hr: number): Mode | null =>
   hr >= SELL_FROM && hr < SELL_TO ? 'sell' : hr >= CHARGE_FROM && hr < SELL_FROM ? 'charge' : null;
 
+export const RESERVE = 0.08; // the battery never goes below this state of charge
+export const FULL = 0.98; // the charge aims here by the start of the evening sale
+
+/* How the charge is spread over the cheap window. Pouring the whole solar output into the battery would fill it in
+   two hours and sell nothing at noon; a real dispatcher shares the output instead — part charges the battery, the rest
+   goes to the grid — and leans the charge into the cheapest minutes, so the battery is full just as the sale starts.
+   Gentler charging also costs the battery less wear. Weight of a moment = the solar the battery could take then,
+   times how far the price sits below the sell level; the charge at any moment = weight × (energy still missing ÷
+   weight still ahead), recomputed every step, so it corrects itself and always lands full. */
+const chargeWeight = (hr: number) =>
+  plan(hr) === 'charge' ? Math.min(solar(hr), PMAX) * Math.max(0.15, (sellT - price(hr)) / (sellT - pMin)) : 0;
+const STEPS_PER_H = 60;
+/** WEIGHT_AHEAD[i] = the charge weight from minute i to the end of the day, in weight-hours. */
+const WEIGHT_AHEAD = (() => {
+  const n = 24 * STEPS_PER_H, out = new Float64Array(n + 1);
+  for (let i = n - 1; i >= 0; i--) out[i] = out[i + 1] + chargeWeight(i / STEPS_PER_H) / STEPS_PER_H;
+  return out;
+})();
+/** Battery charging power (MW) at `hr` with the battery at `soc`. */
+export function chargePower(hr: number, soc: number) {
+  const pv = solar(hr), room = Math.min(pv, PMAX);
+  const missing = Math.max(0, (FULL - soc) * CAP);
+  // interpolate between the minutes: a stepped value would make the charge (and the export next to it) jitter
+  const x = Math.min(24 * STEPS_PER_H, hr * STEPS_PER_H), i = Math.floor(x), f = x - i;
+  const ahead = WEIGHT_AHEAD[i] + (WEIGHT_AHEAD[Math.min(i + 1, 24 * STEPS_PER_H)] - WEIGHT_AHEAD[i]) * f;
+  if (missing <= 0) return 0;
+  if (ahead < 1e-4) return room; // the window is closing: take what the sun gives
+  return Math.min(room, chargeWeight(hr) * (missing / ahead));
+}
+
 /** Colour of each mode; the labels live in the dictionaries (t.modes). */
 export const MODE_COLOR: Record<Mode, string> = { charge: '#16a34a', sell: '#3b6cff', hold: '#8b8f96' };
 
@@ -106,7 +136,6 @@ export function nextSale(hr: number) {
   return { clock: clockOf(19.5), price: price(19.5) };
 }
 
-export const RESERVE = 0.08; // the battery never goes below this state of charge
 
 /** One sentence on what the dispatcher is doing right now, with the money in it. */
 export function reason(s: Snapshot, t: Dict) {
@@ -141,9 +170,13 @@ export class DaySim {
       mode = 'sell';
       // discharge only into the room the grid connection leaves next to the solar output
       batP = -Math.min(PMAX, Math.max(0, GRID - pv), (this.soc * CAP) / Math.max(dh, 1e-3));
-    } else if (window === 'charge' && pv > 0.05 && this.soc < 0.98) {
-      mode = 'charge'; // the cheap hours fill the battery; once full it holds, and solar goes to the grid
-      batP = Math.min(pv, PMAX);
+    } else if (window === 'charge' && pv > 0.05 && this.soc < FULL) {
+      // part of the solar charges the battery (paced to be full by the sale), the rest is exported at the same time
+      const c = chargePower(hr, this.soc);
+      if (c > 0.005) {
+        mode = 'charge';
+        batP = c;
+      }
     }
     this.soc = Math.min(1, Math.max(0, this.soc + (batP * dh) / CAP));
     const pvToGrid = Math.max(0, pv - Math.max(0, batP));
@@ -203,7 +236,7 @@ export function summarizeDay(): DaySummary {
     revenue = Math.max(revenue, s.rev);
     if (s.price > peakPrice) { peakPrice = s.price; peakHr = s.hr; }
     if (s.mode === 'charge' && prev.mode !== 'charge') chargeStart = s.clock;
-    if (!fullClock && s.soc >= 0.98) { fullClock = s.clock; chargeFrom = chargeStart; }
+    if (!fullClock && s.soc >= FULL - 0.005) { fullClock = s.clock; chargeFrom = chargeStart; }
     if (!sellFrom && s.hr > 12 && s.mode === 'sell') { sellFrom = s.clock; sellFromPrice = s.price; }
     if (sellFrom && s.mode === 'sell') sellTo = s.clock;
     prev = s;

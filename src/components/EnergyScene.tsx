@@ -65,7 +65,7 @@ export function EnergyScene() {
       const site = buildSite();
       // desktop: the whole site a little below centre (the canvas stops short of the right edge, see .stage in styles.css);
       // phones: frame only the core objects so the scene fills the small box
-      stage.setObject(site.root, { shiftY: 0.12, phoneBox: site.coreBox });
+      stage.setObject(site.root, { shiftY: 0.12, phoneShiftY: -0.03 }); // phones: the whole site incl. the cable loop, higher, clear of the notification
       const alerts = new AlertDirector(site, coLayer);
 
       const nodes = LABELS.map((def) => {
@@ -88,6 +88,8 @@ export function EnergyScene() {
         const w = host.clientWidth, h = host.clientHeight;
         if (!w || !h) return;
         const phone = isPhone();
+        // phones: the grid label says just "Grid" — the long "Grid · export" ran into the battery label's line
+        nodes[0].t.textContent = phone ? currentDict.scene.grid.split(' · ')[0] : currentDict.scene.grid;
         const k = phone ? Math.max(0.5, h / 600) : Math.min(1, h / 820);
         const items = nodes.map((n) => {
           const p = n.at.clone().project(stage.camera);
@@ -136,7 +138,7 @@ export function EnergyScene() {
         animateSite(site, s);
         const w = host.clientWidth, h = host.clientHeight;
         const phone = isPhone();
-        if (!phone) alerts.update(s.hr, s.t, stage.camera, w, h, d); // the phone card is too small for the AI notes and beacon
+        alerts.update(s.hr, s.t, stage.camera, w, h, d, phone); // phones get the notes as notifications at the bottom of the scene
         for (const n of nodes) {
           const p = n.at.clone().project(stage.camera);
           const visible = p.z < 1 && p.z > -1;

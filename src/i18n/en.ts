@@ -163,7 +163,7 @@ export const en = {
     /* the day of the scene: the times and prices come from the simulation */
     journal: [
       ['06:10', 'Morning self-test: insulation 2.1 MΩ, all inverters OK', 'ok'],
-      [DAY.chargeFrom, `Price below ${price(buyT)} — solar now goes into the battery`, 'ok'],
+      [DAY.chargeFrom, `Price below ${price(buyT)} — part of the solar now charges the battery, the rest is sold`, 'ok'],
       ['10:42', 'String 7 on inverter 3: 612 V, 12 % below its neighbours → alert to the technician (Telegram)', 'alert'],
       ['11:15', 'Technician: shading from a crane on site, no action — re-check at 14:00', 'note'],
       [DAY.fullClock, 'Battery full from solar — holding for the evening peak', 'ok'],

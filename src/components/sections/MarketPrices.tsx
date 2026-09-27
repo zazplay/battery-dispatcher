@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Reveal } from '../Reveal';
 import { Flag } from '../Flag';
 import { useT } from '../../i18n';
@@ -7,6 +8,10 @@ import { useT } from '../../i18n';
    UA — Оператор ринку indexes via ExPro, NEURC cap. FX used for the € column: 4.37 PLN/€, 51.3 UAH/€, ~24.45 CZK/€. */
 
 type Row = { label: string; local: string; eur: string; tone?: 'low' | 'peak' };
+type MarketId = 'cz' | 'pl' | 'ua';
+
+/** The market of the page's language goes in the middle; English opens on Czechia (the demo site is in Kolín). */
+const HOME: Record<string, MarketId> = { en: 'cz', cs: 'cz', pl: 'pl', uk: 'ua' };
 
 export function MarketPrices() {
   const { t, lang } = useT();
@@ -19,7 +24,7 @@ export function MarketPrices() {
   const pln = (v: string) => n(v) + ' zł/kWh';
   const uah = (v: string) => n(v) + ' ₴/kWh';
 
-  const markets: { id: 'cz' | 'pl' | 'ua'; market: string; date: string; rows: Row[]; source: string; note?: string }[] = [
+  const markets: { id: MarketId; market: string; date: string; rows: Row[]; source: string; note?: string }[] = [
     {
       id: 'cz',
       market: 'OTE · day-ahead',
@@ -62,6 +67,33 @@ export function MarketPrices() {
     },
   ];
 
+  // three cards in a row, the home market in the middle; on narrow screens a swipeable row that opens centred on it
+  const home = HOME[lang] ?? 'cz';
+  const others = markets.filter((m) => m.id !== home);
+  const ordered = [others[0], markets.find((m) => m.id === home)!, others[1]];
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(1);
+  const centre = (i: number, smooth: boolean) => {
+    const row = rowRef.current, card = row?.children[i] as HTMLElement | undefined;
+    if (!row || !card) return;
+    row.scrollTo({ left: card.offsetLeft - (row.clientWidth - card.offsetWidth) / 2, behavior: smooth ? 'smooth' : 'auto' });
+  };
+  useEffect(() => {
+    centre(1, false); // on load and on a language change: the home market in view
+    setActive(1);
+  }, [lang]);
+  const onScroll = () => {
+    const row = rowRef.current;
+    if (!row) return;
+    const mid = row.scrollLeft + row.clientWidth / 2;
+    let best = 0, dist = Infinity;
+    Array.from(row.children).forEach((c, i) => {
+      const el = c as HTMLElement, d = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid);
+      if (d < dist) { dist = d; best = i; }
+    });
+    setActive(best);
+  };
+
   return (
     <section className="sec dark" id="prices">
       <div className="wrap">
@@ -69,9 +101,9 @@ export function MarketPrices() {
         <h2>{p.title}</h2>
         <p className="sub">{p.sub}</p>
         <Reveal>
-          <div className="markets">
-            {markets.map((m) => (
-              <div className="market" key={m.id}>
+          <div className="markets" ref={rowRef} onScroll={onScroll}>
+            {ordered.map((m, i) => (
+              <div className={'market' + (m.id === home ? ' home' : '') + (i === active ? ' on' : '')} key={m.id}>
                 <div className="market-head">
                   <Flag of={m.id} />
                   <div>
@@ -96,6 +128,13 @@ export function MarketPrices() {
                 </div>
                 {m.note && <p className="market-note">{m.note}</p>}
               </div>
+            ))}
+          </div>
+          <div className="market-dots">
+            {ordered.map((m, i) => (
+              <button key={m.id} type="button" className={i === active ? 'on' : ''} aria-label={p.countries[m.id]} onClick={() => centre(i, true)}>
+                <Flag of={m.id} className="sm" />
+              </button>
             ))}
           </div>
         </Reveal>

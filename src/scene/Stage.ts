@@ -25,6 +25,7 @@ export class Stage {
   private phoneBox?: THREE.Box3;
   private shiftX = 0;
   private shiftY = 0;
+  private phoneShiftY = 0;
 
   constructor(container: HTMLElement) {
     // preserveDrawingBuffer was only needed by the design tool's screenshots; off, it renders cleaner and cheaper
@@ -77,8 +78,9 @@ export class Stage {
 
   /** Show the object: rest it on the ground, frame the camera, size the shadow camera.
    *  `shiftX` / `shiftY` nudge the framing as a fraction of the object's radius: positive = object appears further left / lower.
-   *  `phoneBox` — a tighter box to frame on narrow screens (the rest of the object may run off the edges). */
-  setObject(object: THREE.Object3D, { shiftX = 0, shiftY = 0, phoneBox }: { shiftX?: number; shiftY?: number; phoneBox?: THREE.Box3 } = {}) {
+   *  `phoneBox` — a tighter box to frame on narrow screens (the rest of the object may run off the edges).
+   *  `phoneShiftY` — `shiftY` on narrow screens (negative = the object sits higher). */
+  setObject(object: THREE.Object3D, { shiftX = 0, shiftY = 0, phoneBox, phoneShiftY = shiftY }: { shiftX?: number; shiftY?: number; phoneBox?: THREE.Box3; phoneShiftY?: number } = {}) {
     if (this.object) this.scene.remove(this.object);
     this.object = object;
     object.traverse((o) => {
@@ -96,6 +98,7 @@ export class Stage {
       this.phoneBox = phoneBox;
       this.shiftX = shiftX;
       this.shiftY = shiftY;
+      this.phoneShiftY = phoneShiftY;
       this.frameObject();
 
       const span = sphere.radius * 1.05;
@@ -130,7 +133,7 @@ export class Stage {
       new THREE.Vector3(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z),
     );
     const tanV = Math.tan((cam.fov * Math.PI) / 360), tanH = tanV * cam.aspect;
-    const MARGIN = phone ? 1.0 : 1.04; // desktop: bounds go 4 % past the frame — the site fills the box, the far corners of the cable loop run off the edges
+    const MARGIN = phone ? 1.12 : 1.04; // phones: the far corners of the cable loop box are empty, so the site may come closer // desktop: bounds go 4 % past the frame — the site fills the box, the far corners of the cable loop run off the edges
     const o = this.orbit;
     o.target.copy(sphere.center);
     o.dist = sphere.radius / Math.min(tanV, tanH);
@@ -154,7 +157,7 @@ export class Stage {
       o.target.addScaledVector(camRight, ((minX + maxX) / 2) * o.dist * tanH).addScaledVector(camUp, ((minY + maxY) / 2) * o.dist * tanV);
       o.dist *= Math.max((maxX - minX) / 2 / MARGIN, (maxY - minY) / 2 / MARGIN);
     }
-    o.target.addScaledVector(camRight, -sphere.radius * this.shiftX).addScaledVector(camUp, sphere.radius * this.shiftY);
+    o.target.addScaledVector(camRight, -sphere.radius * this.shiftX).addScaledVector(camUp, sphere.radius * (phone ? this.phoneShiftY : this.shiftY));
     cam.near = Math.max(o.dist / 100, 0.01);
     cam.far = o.dist * 100;
     cam.updateProjectionMatrix();

@@ -110,6 +110,8 @@ h1.ai-line b { color: var(--blue); font-weight: 800; }
 .co-head { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--blue); letter-spacing: 0.03em; text-transform: uppercase; }
 .co-time { margin-left: auto; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--grey); font-variant-numeric: tabular-nums; }
 .co-note { font-size: 12.5px; line-height: 1.4; color: var(--ink); margin-top: 4px; min-height: 17px; text-wrap: pretty; }
+.co-toast { display: none; }
+@keyframes coToast { 0% { opacity: 0; transform: translateY(14px) scale(0.97); } 100% { opacity: 1; transform: none; } }
 @keyframes coLine { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes coCard { 0% { opacity: 0; transform: translateY(-50%) translateX(var(--dx)) scale(0.94); } 100% { opacity: 1; transform: translateY(-50%) scale(1); } }
 @keyframes coPing { 0% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; } 100% { transform: translate(-50%, -50%) scale(3.2); opacity: 0; } }
@@ -201,7 +203,10 @@ svg text { font-family: inherit; }
 .sec.dark { background: var(--ink); color: #fff; margin-inline: -16px; padding-inline: 16px; }
 .sec.dark .eyebrow { color: #8fb0ff; }
 .sec.dark .sub { color: rgba(255, 255, 255, 0.72); }
-.markets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; }
+.markets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; align-items: stretch; }
+/* the market of the page's language sits in the middle and is lifted a little */
+.market.home { background: rgba(255, 255, 255, 0.1); border-color: rgba(143, 176, 255, 0.45); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25); }
+.market-dots { display: none; }
 .market { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; }
 .market-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .market-head b { display: block; font-size: 17px; }
@@ -378,7 +383,15 @@ footer a { color: inherit; padding-block: 8px; }
    ===================================================================== */
 @media (max-width: 1000px) {
   .two { grid-template-columns: 1fr; gap: 28px; }
-  .markets { grid-template-columns: 1fr; max-width: 640px; }
+  /* narrow screens: a swipeable row, one card in the middle with its neighbours peeking in from the sides */
+  .markets { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin-inline: -16px; padding: 4px calc(50% - min(42vw, 190px)) 8px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .markets::-webkit-scrollbar { display: none; }
+  .market { flex: 0 0 min(84vw, 380px); scroll-snap-align: center; opacity: 0.55; transform: scale(0.96); transition: opacity 0.3s, transform 0.3s; }
+  .market.on { opacity: 1; transform: none; }
+  .market-dots { display: flex; justify-content: center; gap: 8px; margin-top: 14px; }
+  .market-dots button { padding: 6px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; opacity: 0.45; transition: opacity 0.2s, background-color 0.2s; }
+  .market-dots button.on { opacity: 1; background: rgba(255, 255, 255, 0.12); }
+  .market-dots .flag.sm { box-shadow: none; }
   .steps, .features { grid-template-columns: repeat(2, 1fr); }
   .step::after { display: none; }
 }
@@ -431,8 +444,15 @@ footer a { color: inherit; padding-block: 8px; }
   .btns { gap: 8px; }
   .btns .btn { flex: 1 1 0; justify-content: center; padding: 13px 10px; font-size: 14.5px; white-space: nowrap; }
   .facts { margin-top: 12px; font-size: 12px; }
-  .stage-wrap { height: 78vw; min-height: 260px; max-height: 440px; margin: 0 16px; border: 1px solid var(--line); border-radius: 16px; }
-  .hud, .callouts { display: none; } /* no money HUD and no AI notes on the small card */
+  /* taller than wide: the site sits in the upper part, the AI notes arrive as notifications along the bottom edge */
+  /* no card around the scene: its sky runs edge to edge and continues up behind the title, one background for the first screen */
+  .hero { background: linear-gradient(180deg, #d3e5f7 0, #e6f0fa calc(150px + 45vw), #f4f8fc calc(230px + 90vw), var(--bg) calc(290px + 100vw)); }
+  .stage-wrap { height: 100vw; min-height: 320px; max-height: 500px; margin: 0; border: 0; border-radius: 0; background: transparent; overflow: visible; } /* the notification shadow must not be cut off at the bottom edge */
+  .hud { display: none; } /* the money lives in the bar under the scene */
+  .stage, .labels, .callouts { translate: -5px 0; } /* the site reads better a touch left of centre */
+  .co-toast { display: block; position: absolute; left: 16px; right: 16px; bottom: 8px; padding: 10px 12px 11px 14px; border-radius: 14px; background: rgba(255, 255, 255, 0.9); -webkit-backdrop-filter: blur(12px) saturate(1.4); backdrop-filter: blur(12px) saturate(1.4); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 8px 24px rgba(30, 50, 90, 0.18), inset 3px 0 0 var(--sev); animation: coToast 0.45s 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.15) both; }
+  .co-toast .co-note { font-size: 13px; min-height: 36px; }
+  .co-toast-old { opacity: 0.75; box-shadow: 0 4px 14px rgba(30, 50, 90, 0.1), inset 3px 0 0 var(--line); transition: opacity 0.4s, box-shadow 0.4s; } /* an older note waits, dimmed, for the next one */
   .lbl .val { font-size: 16px; }
   .lbl .val small { font-size: 11px; }
   .lbl .ttl { font-size: 11px; margin-top: 0; }

@@ -181,7 +181,11 @@ export class DaySim {
     this.soc = Math.min(1, Math.max(0, this.soc + (batP * dh) / CAP));
     const pvToGrid = Math.max(0, pv - Math.max(0, batP));
     const batToGrid = Math.max(0, -batP);
-    const gridP = Math.min(GRID, pvToGrid + batToGrid);
+    // at the connection limit the meter never reads a flat 1000 kW: the inverters regulate around the setpoint and
+    // the export wanders a few per cent either side (a smooth mix of slow waves, the same every loop)
+    const wobble = 1 + 0.018 * Math.sin(t * 1.7) + 0.011 * Math.sin(t * 4.3 + 1) + 0.006 * Math.sin(t * 9.1 + 2);
+    const raw = pvToGrid + batToGrid;
+    const gridP = raw >= GRID * 0.995 ? GRID * wobble : Math.min(GRID, raw);
     this.rev += gridP * p * dh * 1000;
     return {
       t,

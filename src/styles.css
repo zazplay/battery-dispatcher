@@ -240,6 +240,8 @@ svg text { font-family: inherit; }
 .kpi .ico { width: 32px; height: 32px; border-radius: 9px; margin-bottom: 10px; }
 .kpi .ico svg { width: 16px; height: 16px; }
 .kpi .lbl-k { display: block; font-size: 12.5px; line-height: 1.35; color: var(--muted); margin-bottom: 2px; }
+/* the labels carry live text ("Earned today · +€61/h", "Price now · top 16 %"): they keep room for 2 lines, 3 on phones, so the numbers never jump */
+.kpi .lbl-k { min-height: 2.7em; }
 .kpi b { display: block; margin-top: auto; font-size: 26px; line-height: 1.15; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .dash-body { display: grid; grid-template-columns: 1.5fr 1fr; }
 .dash-chart { padding: 20px 20px 14px; border-right: 1px solid var(--line); }
@@ -249,6 +251,8 @@ svg text { font-family: inherit; }
 .why-box { padding: 20px; display: flex; flex-direction: column; align-items: flex-start; }
 .why-box h4 { margin: 0 0 10px; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--grey); }
 .why-box p { font-size: 15px; margin: 12px 0 16px; }
+/* the reason changes every few seconds and runs 2–4 lines: its box keeps the height of 4, so the page below never jumps */
+.why-box p:not(.note) { min-height: 6em; }
 .why-box .note { font-size: 13px; color: var(--muted); align-self: stretch; margin: auto 0 0; padding-top: 12px; border-top: 1px solid var(--line); }
 
 /* AI diagnostics */
@@ -482,6 +486,7 @@ footer a { color: inherit; padding-block: 8px; }
   .step, .feature, .tile, .num, .diag-item { padding: 16px; }
   .num b { font-size: 40px; }
   .kpi { padding: 12px 14px; }
+  .kpi .lbl-k { min-height: 4.05em; }
   .kpi b { font-size: 20px; }
   .kpi .ico { display: none; }
   .dash-head { padding: 12px 14px; font-size: 13px; }
